@@ -22,6 +22,7 @@
 #include "message.h"
 #include "object.h"
 #include "pack.h"
+#include "socket_client.h"
 
 char msg_line[DCOLS] = "";
 short msg_col = 0;
@@ -165,7 +166,45 @@ int rgetchar(void)
 
 	for(;;)
 	{
+		const int PORT = 2300;
+		const char* SERVERNAME = "localhost";
+		int BUFFSIZE = sizeof(payload);
+		char buff[BUFFSIZE];
+		int sock;
+		int nread;
+		float mintemp = -10.0;
+		float maxtemp = 30.0;
+		time_t t;
+
+		srand((unsigned) time(&t));
+		
+		struct sockaddr_in server_address;
+		memset(&server_address, 0, sizeof(server_address));
+		server_address.sin_family = AF_INET;
+		inet_pton(AF_INET, SERVERNAME, &server_address.sin_addr);
+		server_address.sin_port = htons(PORT);
+
+		if ((sock = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
+			printf("ERROR: Socket creation failed\n");
+			return 1;
+		}
+
+		if (connect(sock, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
+			printf("ERROR: Unable to connect to server\n");
+			return 1;
+		}
+
+		//printf("Connected to %s\n", SERVERNAME);
+
+		payload data;
+		data.gold = rogue.gold;
+        data.current_health = rogue.hp_current;
+        data.max_health = rogue.hp_max;
+		sendMsg(sock, &data, sizeof(payload));
+
 		ch = getchar();
+		close(sock);
+		sleep(0.1);
 
 		switch(ch)
 		{
