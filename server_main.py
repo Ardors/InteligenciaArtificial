@@ -10,13 +10,18 @@ import socket
 import sys
 import random
 from ctypes import *
+import time
 
 
 """ This class defines a C-like struct """
 class Payload(Structure):
     _fields_ = [("gold", c_uint32),
                 ("current_health", c_uint32),
-                ("max_health", c_uint32)]
+                ("max_health", c_uint32),
+                ("current_exp", c_uint32),
+                ("exp_level", c_uint32),
+                ("current_strength", c_uint32),
+                ("max_strength", c_uint32)]
 
 
 def main():
@@ -40,12 +45,19 @@ def main():
             while buff:
                 print("\nReceived {:d} bytes".format(len(buff)))
                 payload_in = Payload.from_buffer_copy(buff)
-                print("Received contents gold={:d}, current health={:d}, max health={:d}".format(payload_in.gold,
+                print("Data read: gold={:d}, current health={:d}, max health={:d}, current exp={:d}, current level={:d}, current strength={:d}, max strength={:d}".format(payload_in.gold,
                                                             payload_in.current_health,
-                                                            payload_in.max_health))
-                #print("Sending it back.. ", end='')
-                #nsent = csock.send(payload_in)
-                #print("Sent {:d} bytes".format(nsent))
+                                                            payload_in.max_health,
+                                                            payload_in.current_exp,
+                                                            payload_in.exp_level,
+                                                            payload_in.current_strength,
+                                                            payload_in.max_strength))
+                time.sleep(0.1)
+                key_input = input("Enter key input \n")
+                while len(key_input)!=1:
+                    key_input = input("Enter key input \n")
+                key_input = key_input.encode('ascii')
+                nsent = csock.send(key_input)
                 buff = csock.recv(512)
 
             print("Closing connection to client")

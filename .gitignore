@@ -4,3 +4,4 @@ test
 /.vscode
 /bin
 client.c
+test.py

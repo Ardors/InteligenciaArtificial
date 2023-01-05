@@ -168,7 +168,7 @@ int rgetchar(void)
 	{
 		const int PORT = 2300;
 		const char* SERVERNAME = "localhost";
-		int BUFFSIZE = sizeof(payload);
+		int BUFFSIZE = 1;//sizeof(payload);
 		char buff[BUFFSIZE];
 		int sock;
 		int nread;
@@ -200,9 +200,18 @@ int rgetchar(void)
 		data.gold = rogue.gold;
         data.current_health = rogue.hp_current;
         data.max_health = rogue.hp_max;
+		data.current_exp = rogue.exp_points;
+		data.max_exp = rogue.exp;
+		data.current_strength = rogue.str_current;
+		data.max_strength = rogue.str_max;
 		sendMsg(sock, &data, sizeof(payload));
 
-		ch = getchar();
+		// ch = getchar();
+		bzero(buff, BUFFSIZE);
+        nread = read(sock, buff, BUFFSIZE);
+        //printf("Received %d bytes\n", nread);
+        ch = (int)(buff[0]);
+		
 		close(sock);
 		sleep(0.1);
 

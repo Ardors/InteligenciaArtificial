@@ -15,6 +15,10 @@ typedef struct payload_t {
     uint32_t gold;
     uint32_t current_health;
     uint32_t max_health;
+    uint32_t current_exp;
+    uint32_t max_exp;
+    uint32_t current_strength;
+    uint32_t max_strength;
 } payload;
 
 #pragma pack()
