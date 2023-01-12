@@ -11,6 +11,7 @@ import sys
 import random
 from ctypes import *
 import time
+import utils
 
 
 """ This class defines a C-like struct """
@@ -61,9 +62,17 @@ def main():
                     message = str(payload_in.pickUp_message)[2:-1]
                     text = message.split(" ")
                     if "gold." not in text:
+                        objType = utils.getType(text)
                         l = len(inventory)
-                        inventory[letters[l]] = text
-                print(inventory)
+                        if objType == "scroll":
+                            addToInventory = utils.InventObject("scroll", text[-2], text[-1])   #a scroll is defined by the inscription on it
+                        elif objType == "potion":
+                            addToInventory = utils.InventObject("potion", text[1], 0)           #a Potion is onli defined by its colour
+                        else:
+                            addToInventory = text
+                        inventory[letters[l]] = addToInventory
+                for i in inventory:
+                    print(i, inventory[i])
                 time.sleep(0.1)
                 if payload_in.need_ack == 0:
                     key_input = input("Enter key input \n")
