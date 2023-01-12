@@ -5,3 +5,4 @@ test
 /bin
 client.c
 test.py
+/obj

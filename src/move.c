@@ -55,6 +55,7 @@ int one_move_rogue(short dirch, short pickup)
 	object *obj;
 	char desc[DCOLS];
 	short n, status;
+	strcpy(rogue.toSend, "nothing");
 
 	row = rogue.row;
 	col = rogue.col;
@@ -138,6 +139,7 @@ int one_move_rogue(short dirch, short pickup)
 		{
 			if ((obj = pick_up(row, col, &status))) {
 				get_desc(obj, desc);
+				strcpy(rogue.toSend, desc);
 				if (obj->what_is == GOLD)
 				{
 					free_object(obj);

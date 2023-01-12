@@ -21,10 +21,14 @@ class Payload(Structure):
                 ("current_exp", c_uint32),
                 ("exp_level", c_uint32),
                 ("current_strength", c_uint32),
-                ("max_strength", c_uint32)]
+                ("max_strength", c_uint32),
+                ("pickUp_message", (c_char*200)),
+                ("need_ack", c_int)]
 
 
 def main():
+    inventory = {}
+    letters = ['f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q'] 
     PORT = 2300
     server_addr = ('localhost', PORT)
     ssock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -52,10 +56,22 @@ def main():
                                                             payload_in.exp_level,
                                                             payload_in.current_strength,
                                                             payload_in.max_strength))
+                                                        
+                if str(payload_in.pickUp_message) != "b'nothing'":
+                    message = str(payload_in.pickUp_message)[2:-1]
+                    text = message.split(" ")
+                    if "gold." not in text:
+                        l = len(inventory)
+                        inventory[letters[l]] = text
+                print(inventory)
                 time.sleep(0.1)
-                key_input = input("Enter key input \n")
-                while len(key_input)!=1:
+                if payload_in.need_ack == 0:
                     key_input = input("Enter key input \n")
+                    while len(key_input)!=1:
+                        key_input = input("Enter key input \n")
+                else:
+                    key_input = " "
+                    print("Sending blank space \n")
                 key_input = key_input.encode('ascii')
                 nsent = csock.send(key_input)
                 buff = csock.recv(512)

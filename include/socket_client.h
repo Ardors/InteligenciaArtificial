@@ -19,6 +19,8 @@ typedef struct payload_t {
     uint32_t max_exp;
     uint32_t current_strength;
     uint32_t max_strength;
+    char toBeSent[250];
+    int ack;
 } payload;
 
 #pragma pack()

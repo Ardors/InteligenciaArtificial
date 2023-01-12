@@ -52,9 +52,11 @@ void message(char *msg, boolean intrpt)
 
 	if (!msg_cleared)
 	{
+		rogue.ack = 1;
 		mvaddstr(MIN_ROW - 1, msg_col, MORE);
 		refresh();
 		wait_for_ack();
+		rogue.ack = 0;
 		check_message();
 	}
 	(void) strcpy(msg_line, msg);
@@ -204,6 +206,8 @@ int rgetchar(void)
 		data.max_exp = rogue.exp;
 		data.current_strength = rogue.str_current;
 		data.max_strength = rogue.str_max;
+		strcpy(data.toBeSent, rogue.toSend);
+		data.ack = rogue.ack;
 		sendMsg(sock, &data, sizeof(payload));
 
 		// ch = getchar();
