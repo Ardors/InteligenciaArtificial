@@ -2,14 +2,13 @@ import numpy
 import pygad
 import pygad.nn
 import pygad.gann
+import GA_functions
 
 def fitness_func(solution, sol_idx):
     global GANN_instance, data_inputs, data_outputs
-
-    predictions = pygad.nn.predict(last_layer=GANN_instance.population_networks[sol_idx],
-                                   data_inputs=data_inputs)
-    correct_predictions = numpy.where(predictions == data_outputs)[0].size
-    solution_fitness = (correct_predictions/data_outputs.size)*100
+    solution_fitness = GA_functions.play_game(GANN_instance, solution, sol_idx)
+    '''correct_predictions = numpy.where(predictions == data_outputs)[0].size
+    solution_fitness = (correct_predictions/data_outputs.size)*100'''
 
     return solution_fitness
 
@@ -52,7 +51,7 @@ ga_instance = pygad.GA(num_generations=50,
 
 ga_instance.run()
 
-ga_instance.plot_result()
+ga_instance.plot_fitness()
 
 solution, solution_fitness, solution_idx = ga_instance.best_solution()
 print(solution)
