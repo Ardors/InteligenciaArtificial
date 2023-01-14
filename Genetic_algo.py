@@ -5,7 +5,7 @@ import pygad.gann
 import GA_functions
 
 def fitness_func(solution, sol_idx):
-    global GANN_instance, data_inputs, data_outputs
+    global GANN_instance
     solution_fitness = GA_functions.play_game(GANN_instance, solution, sol_idx)
     '''correct_predictions = numpy.where(predictions == data_outputs)[0].size
     solution_fitness = (correct_predictions/data_outputs.size)*100'''
@@ -23,23 +23,15 @@ def callback_generation(ga_instance):
     print("Generation = {generation}".format(generation=ga_instance.generations_completed))
     print("Accuracy   = {fitness}".format(fitness=ga_instance.best_solution()[1]))
 
-data_inputs = numpy.array([[1, 1],
-                           [1, 0],
-                           [0, 1],
-                           [0, 0]])
-
-data_outputs = numpy.array([0, 
-                            1, 
-                            1, 
-                            0])
-
-GANN_instance = pygad.gann.GANN(num_solutions=5,
-                                num_neurons_input=2,
-                                num_neurons_hidden_layers=[2],
-                                num_neurons_output=2,
-                                hidden_activations=["relu"],
+print("aa")
+GANN_instance = pygad.gann.GANN(num_solutions=100,
+                                num_neurons_input=13955,
+                                num_neurons_hidden_layers=[7000, 1000, 100],
+                                num_neurons_output=25,
+                                hidden_activations=["relu", "sigmoid", "relu"],
                                 output_activation="softmax")
 
+print("bb")
 population_vectors = pygad.gann.population_as_vectors(population_networks=GANN_instance.population_networks)
 
 ga_instance = pygad.GA(num_generations=50, 

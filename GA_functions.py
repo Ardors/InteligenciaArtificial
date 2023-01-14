@@ -97,8 +97,8 @@ def getInputData():
         item+=1
         
         entradas = [player.health, player.maxHealth, player.strength, player.maxStrength, player.armor, player.weapon1, player.weapon2, player.level, player.exp, player.Xpos, player.yPos]
-        for i in range(25):
-            for j in range(81):
+        for i in range(24):
+            for j in range(80):
                 for k in range(7):
                     entradas.append(viewedDungeon[i][j][k])
         for i in range(24):
