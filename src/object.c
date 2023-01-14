@@ -391,12 +391,18 @@ unsigned short gr_what_is(void)
 	} else if (percent <= 83)
 	{
 		what_is = ARMOR;
+	/*
 	} else if (percent <= 88)
 	{
 		what_is = FOOD;
 	} else
 	{
 		what_is = RING;
+	}
+	*/
+	} else
+	{
+		what_is = FOOD;
 	}
 	return(what_is);
 }
@@ -420,7 +426,8 @@ void gr_scroll(object *obj)
 		obj->which_kind = CREATE_MONSTER;
 	} else if (percent <= 35)
 	{
-		obj->which_kind = IDENTIFY;
+		//obj->which_kind = IDENTIFY;
+		obj->which_kind = REMOVE_CURSE;
 	} else if (percent <= 43)
 	{
 		obj->which_kind = TELEPORT;
