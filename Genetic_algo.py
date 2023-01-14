@@ -24,22 +24,23 @@ def callback_generation(ga_instance):
     print("Accuracy   = {fitness}".format(fitness=ga_instance.best_solution()[1]))
 
 print("aa")
-GANN_instance = pygad.gann.GANN(num_solutions=100,
-                                num_neurons_input=13955,
-                                num_neurons_hidden_layers=[7000, 1000, 100],
+GANN_instance = pygad.gann.GANN(num_solutions=10,
+                                num_neurons_input=13955,    #13955
+                                num_neurons_hidden_layers=[1000, 500, 100],
                                 num_neurons_output=25,
                                 hidden_activations=["relu", "sigmoid", "relu"],
                                 output_activation="softmax")
 
 print("bb")
 population_vectors = pygad.gann.population_as_vectors(population_networks=GANN_instance.population_networks)
-
-ga_instance = pygad.GA(num_generations=50, 
-                       num_parents_mating=3, 
+print("cc")
+ga_instance = pygad.GA(num_generations=1000, 
+                       num_parents_mating=100, 
                        initial_population=population_vectors.copy(),
                        fitness_func=fitness_func,
                        mutation_percent_genes=5,
-                       callback_generation=callback_generation)
+                       callback_generation=callback_generation,
+                       save_best_solutions=True)
 
 ga_instance.run()
 

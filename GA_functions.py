@@ -2,27 +2,37 @@ import numpy as np
 import pygad
 import pygad.nn
 import pygad.gann
-import subprocess
 import os
+import proc
 
 
 def init_game():
     """Initialize player inventory, equipment and other things"""
+    player = proc.Player(12, 12, 16, 16, 4, 1, 1, 1, 0, 5, 5, True)     #starting position = (5,5) but this will be changed in the first getInputData
+    inventory = []
+    inventory.append(proc.Object("FOOD", "food", 1, "a"))
+    inventory.append(proc.Object("ARMOR", "ring", 1, "b"))
+    inventory.append(proc.Object("WEAPON", "mace", 1, "c"))
+    inventory.append(proc.Object("WEAPON", "short bow", 1, "d"))
+    inventory.append(proc.Object("WEAPON", "arrows", 33, "e"))          #initialize the number of arrows to 33: define this specific value in the C code
     initialFitness = 0
-    return({}, {}, initialFitness)
+    return(player, {}, initialFitness)
 
-def play_game(GANN_instance, solution, sol_idx):
+def play_game(model, solution):#, sol_idx):
     [player, inventory, solution_fitness] = init_game()
     launch_game()
-    [Inputs, inventory, player, dungeon] = getInputData()
+    [Inputs, inventory, player, dungeon] = getInputData(inventory, player)
     nbCelulasAnterior = 0
     nbCelulasCurrent = 0
     [solution_fitness, nbCelulasCurrent, nbCelulasAnterior] = computeFitness(player, inventory, dungeon, nbCelulasCurrent, nbCelulasAnterior)   #computing fitness function here to initialize nCelulasCurrent
     while gameIsOn(player):
-        predictions = pygad.nn.predict(last_layer=GANN_instance.population_networks[sol_idx],
-                                    data_inputs=Inputs)
+        """predictions = pygad.nn.predict(last_layer=GANN_instance.population_networks[sol_idx],
+                                    data_inputs=Inputs)"""
+        predictions = pygad.kerasga.predict(model=model,
+                                        solution=solution,
+                                        data=Inputs)
         processPrediction(predictions, inventory)
-        [Inputs, inventory, player, dungeon] = getInputData()
+        [Inputs, inventory, player, dungeon] = getInputData(inventory, player)
         [solution_fitness, nbCelulasCurrent, nbCelulasAnterior] = computeFitness(player, inventory, dungeon, nbCelulasCurrent, nbCelulasAnterior)
     return solution_fitness
 
@@ -31,10 +41,10 @@ def launch_game():
     cmd_line = "gnome-terminal -x bash -c \"bin/rogue; exec bash\""
     os.system(cmd_line)
 
-def getInputData():
+def getInputData(inventory, player):
     """outputs: viewedDungeon as a matrix of binary column vectors 
     representing: [floor(.) wall(- or |) tunnel(#) door(+) ennemy(any letter) collectible(any symbol) stairs(%)]"""
-    dungeon, player = getDataFromGame()
+    [dungeon, player, inventory] = getDataFromGame(inventory)
     viewedDungeon = np.zeros((24,80,7))
     for i in range(24):
         for j in range(80):
@@ -54,7 +64,7 @@ def getInputData():
                 viewedDungeon[i][j] = [0, 0, 0, 0, 0, 0, 1]
             else:
                 viewedDungeon[i][j] = [0, 0, 0, 0, 0, 0, 0]
-    inventory = getInventory()                                  #inventory = list of object types with fields: type(str), subtype(str), quantity(int), key(str)
+    #inventory = getInventory()                                  #inventory = list of object types with fields: type(str), subtype(str), quantity(int), key(str)
     inputInventory = np.zeros((24,21))                          #24 slots in inventory and 20 = 6(objects types) + 14(object subtypes) + 1(quantity)
     item = 0
     for object in inventory: 
