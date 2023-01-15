@@ -22,6 +22,7 @@
 #include "message.h"
 #include "object.h"
 #include "pack.h"
+#include "socket_client.h"
 
 char msg_line[DCOLS] = "";
 short msg_col = 0;
@@ -31,6 +32,7 @@ char hunger_str[8] = "";
 extern boolean cant_int, did_int, interrupted, save_is_interactive;
 extern short add_strength;
 extern int cur_level;
+extern unsigned short dungeon[DROWS][DCOLS];
 extern fighter rogue;
 
 void save_screen(void);
@@ -48,14 +50,18 @@ void message(char *msg, boolean intrpt)
 		md_slurp();
 	}
 	cant_int = 1;
-
+	
+	rogue.ack = 0;
 	if (!msg_cleared)
 	{
+		rogue.ack = 1;
 		mvaddstr(MIN_ROW - 1, msg_col, MORE);
 		refresh();
 		wait_for_ack();
+		rogue.ack = 0;
 		check_message();
 	}
+	rogue.ack = 0;
 	(void) strcpy(msg_line, msg);
 	mvaddstr(MIN_ROW - 1, 0, msg);
 	addch(' ');
@@ -165,7 +171,65 @@ int rgetchar(void)
 
 	for(;;)
 	{
-		ch = getchar();
+		const int PORT = 2300;
+		const char* SERVERNAME = "localhost";
+		int BUFFSIZE = sizeof(payload);
+		char buff[BUFFSIZE];
+		int sock;
+		int nread;
+		float mintemp = -10.0;
+		float maxtemp = 30.0;
+		time_t t;
+
+		srand((unsigned) time(&t));
+		
+		struct sockaddr_in server_address;
+		memset(&server_address, 0, sizeof(server_address));
+		server_address.sin_family = AF_INET;
+		inet_pton(AF_INET, SERVERNAME, &server_address.sin_addr);
+		server_address.sin_port = htons(PORT);
+
+		if ((sock = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
+			printf("ERROR: Socket creation failed\n");
+			return 1;
+		}
+
+		if (connect(sock, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
+			printf("ERROR: Unable to connect to server\n");
+			return 1;
+		}
+
+		//printf("Connected to %s\n", SERVERNAME);
+
+		payload data;
+		data.gold = rogue.gold;
+        data.current_health = rogue.hp_current;
+        data.max_health = rogue.hp_max;
+		data.current_exp = rogue.exp_points;
+		data.max_exp = rogue.exp;
+		data.current_strength = rogue.str_current;
+		data.max_strength = rogue.str_max;
+		data.pos_x = rogue.col;
+		data.pos_y = rogue.row;
+		data.dungeon_level = cur_level;
+		for (int i = 0; i < DROWS; i++){
+			for (int j = 0; j < DCOLS; j++){
+				data.map[i][j] = dungeon[i][j];
+			}
+		}
+		
+		strcpy(data.toBeSent, rogue.toSend);
+		data.ack = rogue.ack;
+		sendMsg(sock, &data, sizeof(payload));
+
+		// ch = getchar();
+		bzero(buff, BUFFSIZE);
+        nread = read(sock, buff, BUFFSIZE);
+        //printf("Received %d bytes\n", nread);
+        ch = (int)(buff[0]);
+		
+		close(sock);
+		sleep(0.1);
 
 		switch(ch)
 		{

@@ -22,6 +22,7 @@
 #include "object.h"
 #include "play.h"
 #include "trap.h"
+#include "socket_client.h"
 
 extern short party_room;
 extern object level_objects;
