@@ -176,80 +176,79 @@ def computeFitness(player, inventory, dungeon, nbCelulasCurrent, nbCelulasAnteri
 def processPrediction(csock, predictions, inventory, player):
     action = predictions.index(1.0)
     if action == 0:
-        sendToGame("y", "")
+        server_main.sendToGame(csock, "y", "", "")
     elif action == 1:
-        sendToGame("k", "")
+        server_main.sendToGame(csock, "k", "", "")
     elif action == 2:
-        sendToGame("u", "")
+        server_main.sendToGame(csock, "u", "", "")
     elif action == 3:
-        sendToGame("h", "")
+        server_main.sendToGame(csock, "h", "", "")
     elif action == 4:
-        sendToGame(".", "")
+        server_main.sendToGame(csock, ".", "", "")
     elif action == 5:
-        sendToGame("l", "")
+        server_main.sendToGame(csock, "l", "", "")
     elif action == 6:
-        sendToGame("b", "")
+        server_main.sendToGame(csock, "b", "", "")
     elif action == 7:
-        sendToGame("j", "")
+        server_main.sendToGame(csock, "j", "", "")
     elif action == 8:
-        sendToGame("n", "")
+        server_main.sendToGame(csock, "n", "", "")
     elif action == 9:
-        sendToGame("<", "")
+        server_main.sendToGame(csock, "<", "", "")
     elif action == 10:
-        sendToGame(">", "")
+        server_main.sendToGame(csock, ">", "", "")
     elif action == 11:
         for object in inventory: 
             if object.type == "FOOD":
                 if object.quantity == 1:
                     inventory.remove(object)
-                sendToGame("e", object.key)         #Eating the first edible item
+                server_main.sendToGame(csock, "e", object.key, "")         #Eating the first edible item
                 break
             else:
-                sendToGame("e", "a")                #In case the agent wants to eat and has no food, it tries to eat object a
+                server_main.sendToGame(csock, "e", "a", "")                #In case the agent wants to eat and has no food, it tries to eat object a
     elif action == 12:
         for object in inventory: 
             if object.type == "POTION":
                 if object.quantity == 1:
                     inventory.remove(object)
-                sendToGame("q", object.key)         #drinking the first potion in inventory
+                server_main.sendToGame(csock, "q", object.key, "")         #drinking the first potion in inventory
                 break
             else:
-                sendToGame("q", "a")                #Idem, we handle the case where it tries to quaff but has no potion in inventory
+                server_main.sendToGame(csock, "q", "a", "")                #Idem, we handle the case where it tries to quaff but has no potion in inventory
     elif action == 13:
         for object in inventory: 
             if object.type == "SCROLL":
                 if object.quantity == 1:
                     inventory.remove(object)
-                sendToGame("r", object.key)
+                server_main.sendToGame(csock, "r", object.key, "")
                 break
             else:
-                sendToGame("r", "a") 
+                server_main.sendToGame(csock, "r", "a", "") 
     elif action in range(14,22):
         for object in inventory: 
             if object.type == "WAND":
-                if action == 14:                        #we send the zapping action and the direction
-                    sendToGame("z", "y")                
+                if action == 14:                        #we send the zapping action then the direction then we indicate the item we want to zap with
+                    server_main.sendToGame(csock, "z", "y", object.key)                
                 elif action == 15:
-                    sendToGame("z", "k")
+                    server_main.sendToGame(csock, "z", "k", object.key)
                 elif action == 16:
-                    sendToGame("z", "u")
+                    server_main.sendToGame(csock, "z", "u", object.key)
                 elif action == 17:
-                    sendToGame("z", "h")
+                    server_main.sendToGame(csock, "z", "h", object.key)
                 elif action == 18:
-                    sendToGame("z", "l")
+                    server_main.sendToGame(csock, "z", "l", object.key)
                 elif action == 19:
-                    sendToGame("z", "b")
+                    server_main.sendToGame(csock, "z", "b", object.key)
                 elif action == 20:
-                    sendToGame("z", "j")
+                    server_main.sendToGame(csock, "z", "j", object.key)
                 elif action == 21:
-                    sendToGame("z", "n")
-                sendToGame(object.key, "")              #The game then prompts with which item we want to zap
+                    server_main.sendToGame(csock, "z", "n", object.key)
                 break
             else:
-                sendToGame("z", "a") 
+                server_main.sendToGame(csock, "z", "k", "a") 
     elif action == 22:
         player.armor = 0
-        sendToGame("T", "")                         #remove armor
+        server_main.sendToGame(csock, "T", "", "")                         #remove armor
     elif action == 23:
         Subtypes = ["placeholder1", "placeholder2", "leather", "ring", "scale", "chain", "banded", "splint", "plate"]
         armorPower = 0                              #I put placeholder1 and placeholder2 so that leather armor has 2 armorPower
@@ -260,9 +259,9 @@ def processPrediction(csock, predictions, inventory, player):
                     armorToEquip = object
         if armorPower>0:                            #checking that at least one armor was found in the inventory
             player.armor = armorPower
-            sendToGame("W", armorToEquip.key)
+            server_main.sendToGame(csock, "W", armorToEquip.key, "")
         else:
-            sendToGame("W", "a")                    #trying to equip the firts item if no armor in inventory
+            server_main.sendToGame(csock, "W", "a", "")                    #trying to equip the firts item if no armor in inventory
     elif action == 24:
         Subtypes = ["placeholder1", "placeholder2", "bow", "darts", "arrows", "daggers", "shurikens", "mace", "long", "two-handed"]
         weaponPower = 0                             #I put placeholder1 and placeholder2 so that bow has 2 weaponPower
@@ -272,9 +271,9 @@ def processPrediction(csock, predictions, inventory, player):
                     weaponPower = Subtypes.index(object.subtype)
                     weaponToEquip = object
         if weaponPower>0:                            #checking that at least one weapon was found in the inventory
-            sendToGame("w", weaponToEquip.key)
+            server_main.sendToGame(csock, "w", weaponToEquip.key, "")
         else:
-            sendToGame("w", "c")                    #in case of no ther weapon, try to equip the c) object (should never happen as the player will never drop his mace in the c key)
+            server_main.sendToGame(csock, "w", "c", "")                    #in case of no ther weapon, try to equip the c) object (should never happen as the player will never drop his mace in the c key)
     return player
 
                 

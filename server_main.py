@@ -124,25 +124,36 @@ def processDataFromGame(ssock, inventory):
         for i in inventory:
             print(i.type, i.subtype, i.quantity, i.key, "\n")
         time.sleep(0.1)
-        if payload_in.need_ack == 0:
-            key_input = input("Enter key input \n")
-            while len(key_input)!=1:
-                key_input = input("Enter key input \n")
-        else:
+        if payload_in.need_ack == 1:
             key_input = " "
             print("Sending blank space \n")
-        key_input = key_input.encode('ascii')
-        nsent = csock.send(key_input)
-        buff = csock.recv(512)
+            key_input = key_input.encode('ascii')
+            nsent = csock.send(key_input)
+            buff = csock.recv(512)
     
     return [csock, dungeon, player, inventory]
 
-    print("Closing connection to client")           #put this in the sendActionToGame function
+    """print("Closing connection to client")           #put this in the sendActionToGame function
     print("----------------------------")
+    csock.close()"""
+
+def sendToGame(csock, act1, act2, act3):
+    key_input1 = act1.encode('ascii')
+    nsent = csock.send(key_input1)
+    buff = csock.recv(512)
+    if act2 !="":
+        key_input2 = act2.encode('ascii')
+        nsent = csock.send(key_input2)
+        buff = csock.recv(512)
+        if act3 !="":
+            key_input3 = act3.encode('ascii')
+            nsent = csock.send(key_input3)
+            buff = csock.recv(512)
     csock.close()
 
 def main():
     inventory = []
+    print("_____________________________________________________________##########################aaaaaaaaaaaaaaaaaaaaooooooooooooooo")
     inventory.append(utils.Object("FOOD", "food", 1, "a"))
     inventory.append(utils.Object("ARMOR", "ring", 1, "b"))
     inventory.append(utils.Object("WEAPON", "mace", 1, "c"))
