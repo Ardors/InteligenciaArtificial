@@ -33,7 +33,9 @@ def play_game(model, solution):#, sol_idx):
         ssock.listen(3)
         print("Server listening on port {:d}".format(PORT))
         launch_game()
-        [csock, Inputs, inventory, player, dungeon] = getInputData(ssock, inventory)
+        csock, client_address = ssock.accept()
+        print("Accepted connection from {:s}".format(client_address[0]))
+        [csock, Inputs, inventory, player, dungeon] = getInputData(csock, inventory)
         nbCelulasAnterior = 0
         nbCelulasCurrent = 0
         [solution_fitness, nbCelulasCurrent, nbCelulasAnterior] = computeFitness(player, inventory, dungeon, nbCelulasCurrent, nbCelulasAnterior)   #computing fitness function here to initialize nCelulasCurrent
@@ -44,7 +46,7 @@ def play_game(model, solution):#, sol_idx):
                                             solution=solution,
                                             data=Inputs)
             player = processPrediction(csock, predictions, inventory, player)                   #player armor, weapon1 and weapon2 attributes can be modified in processPrediction
-            [csock, Inputs, inventory, player, dungeon] = getInputData(ssock, inventory)
+            [csock, Inputs, inventory, player, dungeon] = getInputData(csock, inventory)
             [solution_fitness, nbCelulasCurrent, nbCelulasAnterior] = computeFitness(player, inventory, dungeon, nbCelulasCurrent, nbCelulasAnterior)
     except AttributeError as ae:
         print("Error creating the socket: {}".format(ae))
@@ -62,26 +64,27 @@ def launch_game():
     cmd_line = "gnome-terminal -x bash -c \"bin/rogue; exec bash\""
     os.system(cmd_line)
 
-def getInputData(ssock, inventory):
+def getInputData(csock, inventory):
     """outputs: viewedDungeon as a matrix of binary column vectors 
     representing: [floor(.) wall(- or |) tunnel(#) door(+) ennemy(any letter) collectible(any symbol) stairs(%)]"""
-    [csock, dungeon, player, inventory] = server_main.processDataFromGame(ssock, inventory)
+    [csock, dungeon, player, inventory] = server_main.processDataFromGame(csock, inventory)
+    print("data processed! \n")
     viewedDungeon = np.zeros((24,80,7))
     for i in range(24):
         for j in range(80):
-            if dungeon[i][j] == "a":                                    #floor
+            if dungeon[i][j] == b"a":                                    #floor
                 viewedDungeon[i][j] = [1, 0, 0, 0, 0, 0, 0]
-            elif (dungeon[i][j] == ")") or (dungeon[i][j] == "1"):      #walls
+            elif (dungeon[i][j] == b")") or (dungeon[i][j] == b"1"):      #walls
                 viewedDungeon[i][j] = [0, 1, 0, 0, 0, 0, 0]
-            elif (dungeon[i][j] == "¡"):                                #tunnels
+            elif (dungeon[i][j] == b"&"):                                #tunnels
                 viewedDungeon[i][j] = [0, 0, 1, 0, 0, 0, 0]
-            elif (dungeon[i][j] == "A"):                                #doors
+            elif (dungeon[i][j] == b"A"):                                #doors
                 viewedDungeon[i][j] = [0, 0, 0, 1, 0, 0, 0]
-            elif dungeon[i][j] in ["c", "£", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]:      #ennemies
+            elif dungeon[i][j] in [b"c", b"$", b"B", b"C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]:      #ennemies
                 viewedDungeon[i][j] = [0, 0, 0, 0, 1, 0, 0]
-            elif dungeon[i][j] in ["*", "b", "]", "!", "?", "=", "/", ":"]:     #collectibles
+            elif dungeon[i][j] in ["*", b"b", "]", "!", "?", "=", "/", ":"]:     #collectibles
                 viewedDungeon[i][j] = [0, 0, 0, 0, 0, 1, 0]
-            elif dungeon[i][j] == "e":                                  #stairs
+            elif dungeon[i][j] == b"e":                                  #stairs
                 viewedDungeon[i][j] = [0, 0, 0, 0, 0, 0, 1]
             else:
                 viewedDungeon[i][j] = [0, 0, 0, 0, 0, 0, 0]

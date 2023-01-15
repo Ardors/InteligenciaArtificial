@@ -34,17 +34,21 @@ class Payload(Structure):
 
 
 
-def processDataFromGame(ssock, inventory):
-    dungeon = np.zeros((24,80))
+def processDataFromGame(csock, inventory):      #ssock estaba en parametro antes
+    #dungeon = np.zeros((24,80))
+    dungeon = np.chararray((25,81))
+    dungeon[:] = ""
     player = utils.Player()
     letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x'] 
-    csock, client_address = ssock.accept()
-    print("Accepted connection from {:s}".format(client_address[0]))
+    #csock, client_address = ssock.accept()
+    #print("Accepted connection from {:s}".format(client_address[0]))
 
     buff = csock.recv(8192)
+    print("received buff")
     while buff:
         #print("\nReceived {:d} bytes".format(len(buff)))
         payload_in = Payload.from_buffer_copy(buff)
+        print("buffer copied!")
         """print("Data read: gold={:d}, current health={:d}, max health={:d}, current exp={:d}, current level={:d}, current strength={:d}, max strength={:d}, pos_x={:d}, pos_y={:d}, dungeon_level={:d}".format(
         payload_in.gold,
         payload_in.current_health,
@@ -59,9 +63,15 @@ def processDataFromGame(ssock, inventory):
         
         indCol, indLin = 0, 0
         for col in payload_in.map:
+            indCol = 0
             for val in col:
                 #print ("{:c}".format(val+33), end = '')
-                dungeon[indLin, indCol] = "{:c}".format(val+33)
+                if ("{:c}".format(val+33)) not in ["£", "¡"]:
+                    dungeon[indLin, indCol] = "{:c}".format(val+33)
+                elif ("{:c}".format(val+33)) == "£":
+                    dungeon[indLin, indCol] = "$"
+                else:                                           #should be "¡" but this resolves the general case
+                    dungeon[indLin, indCol] = "&"
                 indCol += 1
             #print(" ")
             indLin +=1
@@ -130,7 +140,7 @@ def processDataFromGame(ssock, inventory):
             key_input = key_input.encode('ascii')
             nsent = csock.send(key_input)
             buff = csock.recv(512)
-    
+    print("returning data")
     return [csock, dungeon, player, inventory]
 
     """print("Closing connection to client")           #put this in the sendActionToGame function

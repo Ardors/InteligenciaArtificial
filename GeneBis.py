@@ -41,11 +41,11 @@ model.add(output_layer)"""
 
 [model, numNodes] = modelKeras.createModel()
 
-
+print("aa")
 # Create an instance of the pygad.kerasga.KerasGA class to build the initial population.
 keras_ga = pygad.kerasga.KerasGA(model=model,
-                                 num_solutions=100)
-
+                                 num_solutions=20)
+print("bb")
 """# XOR problem inputs
 data_inputs = numpy.array([[0, 0],
                            [0, 1],
@@ -69,7 +69,7 @@ ga_instance = pygad.GA(num_generations=num_generations,
                        initial_population=initial_population,
                        fitness_func=fitness_func,
                        on_generation=callback_generation)
-
+print("cc")
 # Start the genetic algorithm evolution.
 ga_instance.run()
 
