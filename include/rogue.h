@@ -230,6 +230,7 @@ struct fight
 	short moves_left;
 	char toSend[250];
 	int ack;
+	short alive;
 };
 
 typedef struct fight fighter;

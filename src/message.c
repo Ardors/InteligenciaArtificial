@@ -220,7 +220,9 @@ int rgetchar(void)
 		
 		strcpy(data.toBeSent, rogue.toSend);
 		data.ack = rogue.ack;
+		data.alive = rogue.alive;
 		sendMsg(sock, &data, sizeof(payload));
+		strcpy(rogue.toSend, "nothing");
 
 		// ch = getchar();
 		bzero(buff, BUFFSIZE);

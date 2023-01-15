@@ -12,14 +12,14 @@ class InventObject:
 
 def getType(text):
     """Get the type of the new object (scroll, potion, armor, ...)"""
-    OBJECTS = ["scroll", "potion", "armor", "mail", "wand", "ring"]
+    OBJECTS = ["scroll", "potion", "armor", "mail", "wand", "staff", "food", "slime-mold", "bow", "darts", "arrows", "daggers", "shurikens", "mace", "long", "two-handed"]
     for i in text:
         if i in OBJECTS:
             return i
     return "unknown"
 
 class Player:
-  def __init__(self, health, maxHealth, strength, maxStrength, armor, weapon1, weapon2, level, exp, Xpos, Ypos, alive):
+  def __init__(self, health=12, maxHealth=12, strength=16, maxStrength=16, armor=3, weapon1=1, weapon2=1, level=1, exp=0, Xpos=5, Ypos=5, alive=True):
     self.health = health
     self.maxHealth = maxHealth
     self.strength = strength
@@ -34,7 +34,7 @@ class Player:
     self.alive = alive
 
 class Object:
-    def __init__(self, type, subtype, quantity, key):
+    def __init__(self, type, subtype, quantity=1, key="f"):
         self.type = type
         self.subtype = subtype
         self.quantity = quantity

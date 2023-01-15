@@ -24,6 +24,7 @@ typedef struct payload_t {
     uint16_t dungeon_level;
     unsigned short map[DROWS][DCOLS];
     int ack;
+    uint32_t alive;
     char toBeSent[250];
 } payload;
 

@@ -3,12 +3,14 @@ import pygad
 import pygad.nn
 import pygad.gann
 import os
+import socket
 import utils
+import server_main
 
 
 def init_game():
     """Initialize player inventory, equipment and other things"""
-    player = utils.Player(12, 12, 16, 16, 4, 1, 1, 1, 0, 5, 5, True)     #starting position = (5,5) but this will be changed in the first getInputData
+    player = utils.Player()     #starting position = (5,5) but this will be changed in the first getInputData
     inventory = []
     inventory.append(utils.Object("FOOD", "food", 1, "a"))
     inventory.append(utils.Object("ARMOR", "ring", 1, "b"))
@@ -20,20 +22,39 @@ def init_game():
 
 def play_game(model, solution):#, sol_idx):
     [player, inventory, solution_fitness] = init_game()
-    launch_game()
-    [Inputs, inventory, player, dungeon] = getInputData(inventory, player)
-    nbCelulasAnterior = 0
-    nbCelulasCurrent = 0
-    [solution_fitness, nbCelulasCurrent, nbCelulasAnterior] = computeFitness(player, inventory, dungeon, nbCelulasCurrent, nbCelulasAnterior)   #computing fitness function here to initialize nCelulasCurrent
-    while gameIsOn(player):
-        """predictions = pygad.nn.predict(last_layer=GANN_instance.population_networks[sol_idx],
-                                    data_inputs=Inputs)"""
-        predictions = pygad.kerasga.predict(model=model,
-                                        solution=solution,
-                                        data=Inputs)
-        processPrediction(predictions, inventory)
-        [Inputs, inventory, player, dungeon] = getInputData(inventory, player)
-        [solution_fitness, nbCelulasCurrent, nbCelulasAnterior] = computeFitness(player, inventory, dungeon, nbCelulasCurrent, nbCelulasAnterior)
+    PORT = 2300
+    server_addr = ('localhost', PORT)
+    ssock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #print("Socket created")
+    try:
+        # bind the server socket and listen
+        ssock.bind(server_addr)
+        print("Bind done")
+        ssock.listen(3)
+        print("Server listening on port {:d}".format(PORT))
+        launch_game()
+        [csock, Inputs, inventory, player, dungeon] = getInputData(ssock, inventory)
+        nbCelulasAnterior = 0
+        nbCelulasCurrent = 0
+        [solution_fitness, nbCelulasCurrent, nbCelulasAnterior] = computeFitness(player, inventory, dungeon, nbCelulasCurrent, nbCelulasAnterior)   #computing fitness function here to initialize nCelulasCurrent
+        while gameIsOn(player):
+            """predictions = pygad.nn.predict(last_layer=GANN_instance.population_networks[sol_idx],
+                                        data_inputs=Inputs)"""
+            predictions = pygad.kerasga.predict(model=model,
+                                            solution=solution,
+                                            data=Inputs)
+            player = processPrediction(csock, predictions, inventory, player)                   #player armor, weapon1 and weapon2 attributes can be modified in processPrediction
+            [csock, Inputs, inventory, player, dungeon] = getInputData(ssock, inventory)
+            [solution_fitness, nbCelulasCurrent, nbCelulasAnterior] = computeFitness(player, inventory, dungeon, nbCelulasCurrent, nbCelulasAnterior)
+    except AttributeError as ae:
+        print("Error creating the socket: {}".format(ae))
+    except socket.error as se:
+        print("Exception on socket: {}".format(se))
+    except KeyboardInterrupt:
+        ssock.close()
+    finally:
+        print("Closing socket")
+        ssock.close()
     return solution_fitness
 
 def launch_game():
@@ -41,26 +62,26 @@ def launch_game():
     cmd_line = "gnome-terminal -x bash -c \"bin/rogue; exec bash\""
     os.system(cmd_line)
 
-def getInputData(inventory, player):
+def getInputData(ssock, inventory):
     """outputs: viewedDungeon as a matrix of binary column vectors 
     representing: [floor(.) wall(- or |) tunnel(#) door(+) ennemy(any letter) collectible(any symbol) stairs(%)]"""
-    [dungeon, player, inventory] = getDataFromGame(inventory)
+    [csock, dungeon, player, inventory] = server_main.processDataFromGame(ssock, inventory)
     viewedDungeon = np.zeros((24,80,7))
     for i in range(24):
         for j in range(80):
-            if dungeon[i][j] == ".":
+            if dungeon[i][j] == "a":                                    #floor
                 viewedDungeon[i][j] = [1, 0, 0, 0, 0, 0, 0]
-            elif (dungeon[i][j] == "-") or (dungeon[i][j] == "|"):
+            elif (dungeon[i][j] == ")") or (dungeon[i][j] == "1"):      #walls
                 viewedDungeon[i][j] = [0, 1, 0, 0, 0, 0, 0]
-            elif (dungeon[i][j] == "#"):
+            elif (dungeon[i][j] == "¡"):                                #tunnels
                 viewedDungeon[i][j] = [0, 0, 1, 0, 0, 0, 0]
-            elif (dungeon[i][j] == "+"):
+            elif (dungeon[i][j] == "A"):                                #doors
                 viewedDungeon[i][j] = [0, 0, 0, 1, 0, 0, 0]
-            elif dungeon[i][j] in ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]:
+            elif dungeon[i][j] in ["c", "£", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]:      #ennemies
                 viewedDungeon[i][j] = [0, 0, 0, 0, 1, 0, 0]
-            elif dungeon[i][j] in ["*", ")", "]", "!", "?", "=", "/", ":"]:
+            elif dungeon[i][j] in ["*", "b", "]", "!", "?", "=", "/", ":"]:     #collectibles
                 viewedDungeon[i][j] = [0, 0, 0, 0, 0, 1, 0]
-            elif dungeon[i][j] == "%":
+            elif dungeon[i][j] == "e":                                  #stairs
                 viewedDungeon[i][j] = [0, 0, 0, 0, 0, 0, 1]
             else:
                 viewedDungeon[i][j] = [0, 0, 0, 0, 0, 0, 0]
@@ -94,7 +115,7 @@ def getInputData(inventory, player):
             inputInventory[item][-1] = object.quantity
         elif object.type == "FOOD":
             inputInventory[item][4] = 1                         #[0,0,0,0,1,0]
-            Subtypes = ["food", "fruit"]                        #I don't think fruits are displayed like this but whathever
+            Subtypes = ["food", "slime-mold"]                        #I don't think fruits are displayed like this but whathever
             subtypeIndex = Subtypes.index(object.subtype)
             inputInventory[item][6 + subtypeIndex] = 1
             inputInventory[item][-1] = object.quantity
@@ -106,7 +127,7 @@ def getInputData(inventory, player):
             inputInventory[item][-1] = object.quantity
         item+=1
         
-        entradas = [player.health, player.maxHealth, player.strength, player.maxStrength, player.armor, player.weapon1, player.weapon2, player.level, player.exp, player.Xpos, player.yPos]
+        entradas = [player.health, player.maxHealth, player.strength, player.maxStrength, player.armor, player.weapon1, player.weapon2, player.level, player.exp, player.Xpos, player.Ypos]
         for i in range(24):
             for j in range(80):
                 for k in range(7):
@@ -115,7 +136,7 @@ def getInputData(inventory, player):
             for j in range(21):
                 entradas.append(inputInventory[i][j])
         
-        return [entradas, inventory, player, dungeon]
+        return [csock, entradas, inventory, player, dungeon]
 
 
 def gameIsOn(player):
@@ -152,7 +173,7 @@ def computeFitness(player, inventory, dungeon, nbCelulasCurrent, nbCelulasAnteri
     fitness = 3*vida + fuerza + 2*objetos + experiencia + scoreArma + scoreArmadura + nbCelulasTotal + 100*(nivelMazmorra-1) - 1000*muerto      #alomejor no hay que usar el bool de muerto sino usar una funcion divergente negativa cuando la vida se acerca de 0 (0.2*vidaMax - vidaMax/vida por ejemplo)
     return [fitness, nbCelulasCurrent, nbCelulasAnterior]
 
-def processPrediction(predictions, inventory):
+def processPrediction(csock, predictions, inventory, player):
     action = predictions.index(1.0)
     if action == 0:
         sendToGame("y", "")
@@ -179,6 +200,8 @@ def processPrediction(predictions, inventory):
     elif action == 11:
         for object in inventory: 
             if object.type == "FOOD":
+                if object.quantity == 1:
+                    inventory.remove(object)
                 sendToGame("e", object.key)         #Eating the first edible item
                 break
             else:
@@ -186,6 +209,8 @@ def processPrediction(predictions, inventory):
     elif action == 12:
         for object in inventory: 
             if object.type == "POTION":
+                if object.quantity == 1:
+                    inventory.remove(object)
                 sendToGame("q", object.key)         #drinking the first potion in inventory
                 break
             else:
@@ -193,6 +218,8 @@ def processPrediction(predictions, inventory):
     elif action == 13:
         for object in inventory: 
             if object.type == "SCROLL":
+                if object.quantity == 1:
+                    inventory.remove(object)
                 sendToGame("r", object.key)
                 break
             else:
@@ -200,52 +227,55 @@ def processPrediction(predictions, inventory):
     elif action in range(14,22):
         for object in inventory: 
             if object.type == "WAND":
-                sendToGame("z", object.key)         #we send the zapping action and the wand to use
-                if action == 14:
-                    sendToGame("y", "")             #The game then prompts inwhich direction we wantto use the wand
+                if action == 14:                        #we send the zapping action and the direction
+                    sendToGame("z", "y")                
                 elif action == 15:
-                    sendToGame("k", "")
+                    sendToGame("z", "k")
                 elif action == 16:
-                    sendToGame("u", "")
+                    sendToGame("z", "u")
                 elif action == 17:
-                    sendToGame("h", "")
+                    sendToGame("z", "h")
                 elif action == 18:
-                    sendToGame("l", "")
+                    sendToGame("z", "l")
                 elif action == 19:
-                    sendToGame("b", "")
+                    sendToGame("z", "b")
                 elif action == 20:
-                    sendToGame("j", "")
+                    sendToGame("z", "j")
                 elif action == 21:
-                    sendToGame("n", "")
+                    sendToGame("z", "n")
+                sendToGame(object.key, "")              #The game then prompts with which item we want to zap
                 break
             else:
                 sendToGame("z", "a") 
     elif action == 22:
+        player.armor = 0
         sendToGame("T", "")                         #remove armor
     elif action == 23:
-        Subtypes = ["leather", "ring", "scale", "chain", "banded", "splint", "plate"]
-        armorPower = 0
+        Subtypes = ["placeholder1", "placeholder2", "leather", "ring", "scale", "chain", "banded", "splint", "plate"]
+        armorPower = 0                              #I put placeholder1 and placeholder2 so that leather armor has 2 armorPower
         for object in inventory:                    #searching for the best armor to equip in the inventory. 
             if object.type == "ARMOR":
                 if armorPower < Subtypes.index(object.subtype):
                     armorPower = Subtypes.index(object.subtype)
                     armorToEquip = object
         if armorPower>0:                            #checking that at least one armor was found in the inventory
+            player.armor = armorPower
             sendToGame("W", armorToEquip.key)
         else:
             sendToGame("W", "a")                    #trying to equip the firts item if no armor in inventory
     elif action == 24:
-        Subtypes = ["short bow", "darts", "arrows", "daggers", "shurikens", "mace", "long sword", "two-handed sword"]
-        weaponPower = 0
-        for object in inventory:                    #searching for the best armor to equip in the inventory. 
-            if object.type == "ARMOR":
+        Subtypes = ["placeholder1", "placeholder2", "bow", "darts", "arrows", "daggers", "shurikens", "mace", "long", "two-handed"]
+        weaponPower = 0                             #I put placeholder1 and placeholder2 so that bow has 2 weaponPower
+        for object in inventory:                    #searching for the best weapon to equip in the inventory. 
+            if object.type == "WEAPON":
                 if weaponPower < Subtypes.index(object.subtype):
                     weaponPower = Subtypes.index(object.subtype)
-                    armorToEquip = object
-        if weaponPower>0:                            #checking that at least one armor was found in the inventory
-            sendToGame("w", armorToEquip.key)
+                    weaponToEquip = object
+        if weaponPower>0:                            #checking that at least one weapon was found in the inventory
+            sendToGame("w", weaponToEquip.key)
         else:
             sendToGame("w", "c")                    #in case of no ther weapon, try to equip the c) object (should never happen as the player will never drop his mace in the c key)
+    return player
 
                 
     

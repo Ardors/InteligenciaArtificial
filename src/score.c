@@ -52,7 +52,7 @@ int get_value(object *);
 void killed_by(object *monster, int other)
 {
 	char buf[80];
-
+	rogue.alive = 0;
 	md_ignore_signals();
 
 	if (other != QUIT)
