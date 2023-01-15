@@ -35,7 +35,8 @@ def play_game(model, solution):#, sol_idx):
         launch_game()
         csock, client_address = ssock.accept()
         print("Accepted connection from {:s}".format(client_address[0]))
-        [csock, Inputs, inventory, player, dungeon] = getInputData(csock, inventory)
+        [Inputs, inventory, player, dungeon] = getInputData(csock, inventory)
+        print(len(Inputs))
         nbCelulasAnterior = 0
         nbCelulasCurrent = 0
         [solution_fitness, nbCelulasCurrent, nbCelulasAnterior] = computeFitness(player, inventory, dungeon, nbCelulasCurrent, nbCelulasAnterior)   #computing fitness function here to initialize nCelulasCurrent
@@ -45,8 +46,9 @@ def play_game(model, solution):#, sol_idx):
             predictions = pygad.kerasga.predict(model=model,
                                             solution=solution,
                                             data=Inputs)
-            player = processPrediction(csock, predictions, inventory, player)                   #player armor, weapon1 and weapon2 attributes can be modified in processPrediction
-            [csock, Inputs, inventory, player, dungeon] = getInputData(csock, inventory)
+            print(len(predictions), len(predictions[0]))
+            player = processPrediction(csock, predictions[0], inventory, player)                   #player armor, weapon1 and weapon2 attributes can be modified in processPrediction
+            [Inputs, inventory, player, dungeon] = getInputData(csock, inventory)
             [solution_fitness, nbCelulasCurrent, nbCelulasAnterior] = computeFitness(player, inventory, dungeon, nbCelulasCurrent, nbCelulasAnterior)
     except AttributeError as ae:
         print("Error creating the socket: {}".format(ae))
@@ -130,16 +132,16 @@ def getInputData(csock, inventory):
             inputInventory[item][-1] = object.quantity
         item+=1
         
-        entradas = [player.health, player.maxHealth, player.strength, player.maxStrength, player.armor, player.weapon1, player.weapon2, player.level, player.exp, player.Xpos, player.Ypos]
-        for i in range(24):
-            for j in range(80):
-                for k in range(7):
-                    entradas.append(viewedDungeon[i][j][k])
-        for i in range(24):
-            for j in range(21):
-                entradas.append(inputInventory[i][j])
+    entradas = [player.health, player.maxHealth, player.strength, player.maxStrength, player.armor, player.weapon1, player.weapon2, player.level, player.exp, player.Xpos, player.Ypos]
+    for i in range(24):
+        for j in range(80):
+            for k in range(7):
+                entradas.append(viewedDungeon[i][j][k])
+    for i in range(24):
+        for j in range(21):
+            entradas.append(inputInventory[i][j])
         
-        return [csock, entradas, inventory, player, dungeon]
+    return [entradas, inventory, player, dungeon]
 
 
 def gameIsOn(player):
@@ -177,7 +179,8 @@ def computeFitness(player, inventory, dungeon, nbCelulasCurrent, nbCelulasAnteri
     return [fitness, nbCelulasCurrent, nbCelulasAnterior]
 
 def processPrediction(csock, predictions, inventory, player):
-    action = predictions.index(1.0)
+    action = np.argmax(predictions)#np.where(np.isclose(predictions, 1.0)) #predictions.index(1.0)
+    print("action: ", action)
     if action == 0:
         server_main.sendToGame(csock, "y", "", "")
     elif action == 1:
@@ -208,7 +211,7 @@ def processPrediction(csock, predictions, inventory, player):
                 server_main.sendToGame(csock, "e", object.key, "")         #Eating the first edible item
                 break
             else:
-                server_main.sendToGame(csock, "e", "a", "")                #In case the agent wants to eat and has no food, it tries to eat object a
+                server_main.sendToGame(csock, ".", "", "")                 #In case the agent wants to eat and has no food, it rests
     elif action == 12:
         for object in inventory: 
             if object.type == "POTION":
@@ -217,7 +220,7 @@ def processPrediction(csock, predictions, inventory, player):
                 server_main.sendToGame(csock, "q", object.key, "")         #drinking the first potion in inventory
                 break
             else:
-                server_main.sendToGame(csock, "q", "a", "")                #Idem, we handle the case where it tries to quaff but has no potion in inventory
+                server_main.sendToGame(csock, ".", "", "")                #Idem, we handle the case where it tries to quaff but has no potion in inventory
     elif action == 13:
         for object in inventory: 
             if object.type == "SCROLL":
@@ -226,7 +229,7 @@ def processPrediction(csock, predictions, inventory, player):
                 server_main.sendToGame(csock, "r", object.key, "")
                 break
             else:
-                server_main.sendToGame(csock, "r", "a", "") 
+                server_main.sendToGame(csock, ".", "", "") 
     elif action in range(14,22):
         for object in inventory: 
             if object.type == "WAND":
@@ -247,11 +250,13 @@ def processPrediction(csock, predictions, inventory, player):
                 elif action == 21:
                     server_main.sendToGame(csock, "z", "n", object.key)
                 break
-            else:
-                server_main.sendToGame(csock, "z", "k", "a") 
+        server_main.sendToGame(csock, ".", "", "") 
     elif action == 22:
-        player.armor = 0
-        server_main.sendToGame(csock, "T", "", "")                         #remove armor
+        if player.armor == 0:
+            server_main.sendToGame(csock, ".", "", "")          #if the agent tries to do a prohibited move il passes its turn
+        else:
+            player.armor = 0
+            server_main.sendToGame(csock, "T", "", "")                         #remove armor
     elif action == 23:
         Subtypes = ["placeholder1", "placeholder2", "leather", "ring", "scale", "chain", "banded", "splint", "plate"]
         armorPower = 0                              #I put placeholder1 and placeholder2 so that leather armor has 2 armorPower
@@ -260,11 +265,11 @@ def processPrediction(csock, predictions, inventory, player):
                 if armorPower < Subtypes.index(object.subtype):
                     armorPower = Subtypes.index(object.subtype)
                     armorToEquip = object
-        if armorPower>0:                            #checking that at least one armor was found in the inventory
+        if (armorPower>0) and (player.armor!=0):                #checking that at least one armor was found in the inventory, and can't equip something if already equipped with something
             player.armor = armorPower
             server_main.sendToGame(csock, "W", armorToEquip.key, "")
         else:
-            server_main.sendToGame(csock, "W", "a", "")                    #trying to equip the firts item if no armor in inventory
+            server_main.sendToGame(csock, ".", "", "")                    #resting if no armor in inventory
     elif action == 24:
         Subtypes = ["placeholder1", "placeholder2", "bow", "darts", "arrows", "daggers", "shurikens", "mace", "long", "two-handed"]
         weaponPower = 0                             #I put placeholder1 and placeholder2 so that bow has 2 weaponPower
@@ -273,10 +278,12 @@ def processPrediction(csock, predictions, inventory, player):
                 if weaponPower < Subtypes.index(object.subtype):
                     weaponPower = Subtypes.index(object.subtype)
                     weaponToEquip = object
-        if weaponPower>0:                            #checking that at least one weapon was found in the inventory
+        if (weaponPower>0) and (weaponPower!=player.weapon1):                #checking that at least one weapon was found in the inventory and can't equip same weapon as already equipped
+            player.weapon1 = weaponPower
+            player.weapon2 = weaponPower
             server_main.sendToGame(csock, "w", weaponToEquip.key, "")
         else:
-            server_main.sendToGame(csock, "w", "c", "")                    #in case of no ther weapon, try to equip the c) object (should never happen as the player will never drop his mace in the c key)
+            server_main.sendToGame(csock, ".", "", "")                    #in case of no ther weapon, resting
     return player
 
                 

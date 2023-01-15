@@ -19,7 +19,7 @@ def getType(text):
     return "unknown"
 
 class Player:
-  def __init__(self, health=12, maxHealth=12, strength=16, maxStrength=16, armor=3, weapon1=1, weapon2=1, level=1, exp=0, Xpos=5, Ypos=5, alive=True):
+  def __init__(self, health=12, maxHealth=12, strength=16, maxStrength=16, armor=3, weapon1=7, weapon2=7, level=1, exp=0, Xpos=5, Ypos=5, alive=True):
     self.health = health
     self.maxHealth = maxHealth
     self.strength = strength
