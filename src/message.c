@@ -50,7 +50,8 @@ void message(char *msg, boolean intrpt)
 		md_slurp();
 	}
 	cant_int = 1;
-
+	
+	rogue.ack = 0;
 	if (!msg_cleared)
 	{
 		rogue.ack = 1;
@@ -60,6 +61,7 @@ void message(char *msg, boolean intrpt)
 		rogue.ack = 0;
 		check_message();
 	}
+	rogue.ack = 0;
 	(void) strcpy(msg_line, msg);
 	mvaddstr(MIN_ROW - 1, 0, msg);
 	addch(' ');

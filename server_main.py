@@ -27,8 +27,8 @@ class Payload(Structure):
                 ("pos_y", c_uint8),
                 ("dungeon_level", c_uint16),
                 ("map", c_uint16 * 80 * 24),
-                ("pickUp_message", (c_char*230)),
-                ("need_ack", c_int)]
+                ("need_ack", c_int),
+                ("pickUp_message", (c_char*230))]
 
 
 def main():
