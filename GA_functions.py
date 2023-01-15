@@ -3,18 +3,18 @@ import pygad
 import pygad.nn
 import pygad.gann
 import os
-import proc
+import utils
 
 
 def init_game():
     """Initialize player inventory, equipment and other things"""
-    player = proc.Player(12, 12, 16, 16, 4, 1, 1, 1, 0, 5, 5, True)     #starting position = (5,5) but this will be changed in the first getInputData
+    player = utils.Player(12, 12, 16, 16, 4, 1, 1, 1, 0, 5, 5, True)     #starting position = (5,5) but this will be changed in the first getInputData
     inventory = []
-    inventory.append(proc.Object("FOOD", "food", 1, "a"))
-    inventory.append(proc.Object("ARMOR", "ring", 1, "b"))
-    inventory.append(proc.Object("WEAPON", "mace", 1, "c"))
-    inventory.append(proc.Object("WEAPON", "short bow", 1, "d"))
-    inventory.append(proc.Object("WEAPON", "arrows", 33, "e"))          #initialize the number of arrows to 33: define this specific value in the C code
+    inventory.append(utils.Object("FOOD", "food", 1, "a"))
+    inventory.append(utils.Object("ARMOR", "ring", 1, "b"))
+    inventory.append(utils.Object("WEAPON", "mace", 1, "c"))
+    inventory.append(utils.Object("WEAPON", "short bow", 1, "d"))
+    inventory.append(utils.Object("WEAPON", "arrows", 33, "e"))          #initialize the number of arrows to 33: define this specific value in the C code
     initialFitness = 0
     return(player, {}, initialFitness)
 
