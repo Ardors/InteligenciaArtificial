@@ -33,7 +33,7 @@ class Payload(Structure):
 
 def main():
     inventory = {}
-    letters = ['f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q'] 
+    letters = ['f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x'] 
     PORT = 2300
     server_addr = ('localhost', PORT)
     ssock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -82,7 +82,7 @@ def main():
                         if objType == "scroll":
                             addToInventory = utils.InventObject("scroll", text[-2], text[-1])   #a scroll is defined by the inscription on it
                         elif objType == "potion":
-                            addToInventory = utils.InventObject("potion", text[1], 0)           #a Potion is onli defined by its colour
+                            addToInventory = utils.InventObject("potion", text[1], 0)           #a Potion is only defined by its colour
                         else:
                             addToInventory = text
                         inventory[letters[l]] = addToInventory
