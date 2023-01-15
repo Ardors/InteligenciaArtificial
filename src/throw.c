@@ -71,11 +71,13 @@ void throw(void)
 		message("No such item.", 0);
 		return;
 	}
+	/*
 	if ((weapon->in_use_flags & BEING_USED) && weapon->is_cursed)
 	{
 		message(curse_message, 0);
 		return;
 	}
+	*/
 	row = rogue.row; col = rogue.col;
 
 	if ((weapon->in_use_flags & BEING_WIELDED) && (weapon->quantity <= 1))

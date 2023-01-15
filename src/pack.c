@@ -316,12 +316,14 @@ void take_off(void)
 
 	if (rogue.armor)
 	{
+		/*
 		if (rogue.armor->is_cursed)
 		{
 			message(curse_message, 0);
 		}
 		else
 		{
+		*/
 			mv_aquatars();
 			obj = rogue.armor;
 			unwear(rogue.armor);
@@ -330,7 +332,7 @@ void take_off(void)
 			message(desc, 0);
 			print_stats(STAT_ARMOR);
 			(void) reg_move();
-		}
+		//}
 	}
 	else
 	{
@@ -396,11 +398,13 @@ void wield(void)
 	object *obj;
 	char desc[DCOLS];
 
+	/*
 	if (rogue.weapon && rogue.weapon->is_cursed)
 	{
 		message(curse_message, 0);
 		return;
 	}
+	*/
 	ch = pack_letter("Wield what?", WEAPON);
 
 	if (ch == ROGUE_KEY_CANCEL)
