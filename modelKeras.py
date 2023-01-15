@@ -13,15 +13,18 @@ def createModel():
 
     input_layer  = tensorflow.keras.layers.Input(shape=(1,))
     dense_layer1 = tensorflow.keras.layers.Dense(numLay2, activation="sigmoid")
-    dense_layer2 = tensorflow.keras.layers.Dense(numLay3, activation="sigmoid")
+    #dense_layer2 = tensorflow.keras.layers.Dense(numLay3, activation="sigmoid")
     dense_layer3 = tensorflow.keras.layers.Dense(numLay4, activation="relu")
     output_layer = tensorflow.keras.layers.Dense(numLay5, activation="softmax")
 
     model = tensorflow.keras.Sequential()
     model.add(input_layer)
     model.add(dense_layer1)
-    model.add(dense_layer2)
+    #model.add(dense_layer2)
     model.add(dense_layer3)
     model.add(output_layer)
     print(model.summary)
+    """converter = tf.lite.TFLiteConverter.from_keras_model(model)     #light the Keras model
+    tflite_model_full = converter.convert()"""
+
     return [model, numNodes]

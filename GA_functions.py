@@ -20,10 +20,11 @@ def init_game():
     inventory.append(utils.Object("WEAPON", "short bow", 1, "d"))
     inventory.append(utils.Object("WEAPON", "arrows", 33, "e"))          #initialize the number of arrows to 33: define this specific value in the C code
     initialFitness = 0
-    return(player, {}, initialFitness)
+    exploredDungeon = np.zeros((24,80))
+    return(player, {}, initialFitness, exploredDungeon)
 
 def play_game(model, solution):#, sol_idx):
-    [player, inventory, solution_fitness] = init_game()
+    [player, inventory, solution_fitness, exploredDungeon] = init_game()
     PORT = 2300
     server_addr = ('localhost', PORT)
     ssock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -37,7 +38,7 @@ def play_game(model, solution):#, sol_idx):
         launch_game()
         csock, client_address = ssock.accept()
         print("Accepted connection from {:s}".format(client_address[0]))
-        [Inputs, inventory, player, dungeon] = getInputData(csock, inventory)
+        [Inputs, inventory, player, dungeon, exploredDungeon] = getInputData(csock, inventory, exploredDungeon)
         print(len(Inputs))
         nbCelulasAnterior = 0
         nbCelulasCurrent = 0
@@ -50,7 +51,7 @@ def play_game(model, solution):#, sol_idx):
                                             data=Inputs)
             print(len(predictions), len(predictions[0]))
             player = processPrediction(csock, predictions[0], inventory, player, dungeon)                   #player armor, weapon1 and weapon2 attributes can be modified in processPrediction
-            [Inputs, inventory, player, dungeon] = getInputData(csock, inventory)
+            [Inputs, inventory, player, dungeon, exploredDungeon] = getInputData(csock, inventory, exploredDungeon)
             print("finished getting data")
             [solution_fitness, nbCelulasCurrent, nbCelulasAnterior] = computeFitness(player, inventory, dungeon, nbCelulasCurrent, nbCelulasAnterior)
             print("fitness compluted")
@@ -70,7 +71,7 @@ def launch_game():
     cmd_line = "gnome-terminal -x bash -c \"bin/rogue; exec bash\""
     os.system(cmd_line)
 
-def getInputData(csock, inventory):
+def getInputData(csock, inventory, exploredDungeon):
     """outputs: viewedDungeon as a matrix of binary column vectors 
     representing: [floor(.) wall(- or |) tunnel(#) door(+) ennemy(any letter) collectible(any symbol) stairs(%)]"""
     [dungeon, player, inventory] = server_main.processDataFromGame(csock, inventory)
@@ -142,8 +143,10 @@ def getInputData(csock, inventory):
     for i in range(24):
         for j in range(21):
             entradas.append(inputInventory[i][j])
-        
-    return [entradas, inventory, player, dungeon]
+    if exploredDungeon[player.Ypos][player.Xpos] == 0:
+        exploredDungeon[player.Ypos][player.Xpos] = 1
+        player.celulasExploradas += 1
+    return [entradas, inventory, player, dungeon, exploredDungeon]
 
 def gameIsOn(player):
     return player.alive
@@ -166,7 +169,7 @@ def computeFitness(player, inventory, dungeon, nbCelulasCurrent, nbCelulasAnteri
     scoreArma = player.weapon1
     scoreArmadura = player.armor
     objetos = len(inventory) - 5        #player starts with 5 objects in inventory
-    counter = 0                         #contador de celdillas descubiertas
+    """counter = 0                         #contador de celdillas descubiertas
     for i in range(24):
         for j in range(80):
             if dungeon[i][j] != " ":
@@ -174,17 +177,16 @@ def computeFitness(player, inventory, dungeon, nbCelulasCurrent, nbCelulasAnteri
     if nbCelulasCurrent > counter:                                      #Queremos utilizar el numero TOTAL de celulas descubiertas, no solo las del nivel actual
         nbCelulasAnterior = nbCelulasAnterior + nbCelulasCurrent
     nbCelulasCurrent = counter
-    nbCelulasTotal = nbCelulasAnterior + nbCelulasCurrent
+    nbCelulasTotal = nbCelulasAnterior + nbCelulasCurrent"""
+    scoreExploracion = player.celulasExploradas
     muerto = not(player.alive)
-    fitness = 3*vida + fuerza + 2*objetos + experiencia + scoreArma + scoreArmadura + nbCelulasTotal + 100*(nivelMazmorra-1) - 1000*muerto      #alomejor no hay que usar el bool de muerto sino usar una funcion divergente negativa cuando la vida se acerca de 0 (0.2*vidaMax - vidaMax/vida por ejemplo)
+    fitness = 3*vida + fuerza + 2*objetos + experiencia + scoreArma + scoreArmadura + 100*(nivelMazmorra-1) + 2*scoreExploracion      #alomejor no hay que usar el bool de muerto sino usar una funcion divergente negativa cuando la vida se acerca de 0 (0.2*vidaMax - vidaMax/vida por ejemplo)
     return [fitness, nbCelulasCurrent, nbCelulasAnterior]
 
 def processPrediction(csock, predictions, inventory, player, dungeon):
     action = np.argmax(predictions)#np.where(np.isclose(predictions, 1.0)) #predictions.index(1.0)
     X = player.Xpos
     Y = player.Ypos
-    print(X, Y)
-    print(dungeon[5])
     autorizadosDiagos = [b"a", b"b", b"e", b"c"]                                #movimientos posibles para no chocarse contra las paredes
     autorizadosHorVert = [b"a", b"b", b"e", b"c", b"A", b"&", b"C", b"$"]       #If the agent wants to go against a wall we make it loose a turn
     actionFailed = False
@@ -231,7 +233,7 @@ def processPrediction(csock, predictions, inventory, player, dungeon):
         else:
             actionFailed = True
     elif action == 9:                                               #should mean to go up a level but is disactivated because we don't do this here
-            server_main.sendToGame(csock, "<", "", "")
+            server_main.sendToGame(csock, ".", "", "")
     elif action == 10:      
         if (dungeon[Y][X] == b"e"):
             server_main.sendToGame(csock, ">", "", "")
