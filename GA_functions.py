@@ -49,9 +49,11 @@ def play_game(model, solution):#, sol_idx):
                                             solution=solution,
                                             data=Inputs)
             print(len(predictions), len(predictions[0]))
-            player = processPrediction(csock, predictions[0], inventory, player)                   #player armor, weapon1 and weapon2 attributes can be modified in processPrediction
+            player = processPrediction(csock, predictions[0], inventory, player, dungeon)                   #player armor, weapon1 and weapon2 attributes can be modified in processPrediction
             [Inputs, inventory, player, dungeon] = getInputData(csock, inventory)
+            print("finished getting data")
             [solution_fitness, nbCelulasCurrent, nbCelulasAnterior] = computeFitness(player, inventory, dungeon, nbCelulasCurrent, nbCelulasAnterior)
+            print("fitness compluted")
     except AttributeError as ae:
         print("Error creating the socket: {}".format(ae))
     except socket.error as se:
@@ -92,7 +94,6 @@ def getInputData(csock, inventory):
                 viewedDungeon[i][j] = [0, 0, 0, 0, 0, 0, 1]
             else:
                 viewedDungeon[i][j] = [0, 0, 0, 0, 0, 0, 0]
-    #inventory = getInventory()                                  #inventory = list of object types with fields: type(str), subtype(str), quantity(int), key(str)
     inputInventory = np.zeros((24,21))                          #24 slots in inventory and 20 = 6(objects types) + 14(object subtypes) + 1(quantity)
     item = 0
     for object in inventory: 
@@ -122,7 +123,7 @@ def getInputData(csock, inventory):
             inputInventory[item][-1] = object.quantity
         elif object.type == "FOOD":
             inputInventory[item][4] = 1                         #[0,0,0,0,1,0]
-            Subtypes = ["food", "slime-mold"]                        #I don't think fruits are displayed like this but whathever
+            Subtypes = ["food", "slime-mold"]
             subtypeIndex = Subtypes.index(object.subtype)
             inputInventory[item][6 + subtypeIndex] = 1
             inputInventory[item][-1] = object.quantity
@@ -133,7 +134,6 @@ def getInputData(csock, inventory):
             inputInventory[item][6 + subtypeIndex] = 1
             inputInventory[item][-1] = object.quantity
         item+=1
-        
     entradas = [player.health, player.maxHealth, player.strength, player.maxStrength, player.armor, player.weapon1, player.weapon2, player.level, player.exp, player.Xpos, player.Ypos]
     for i in range(24):
         for j in range(80):
@@ -144,7 +144,6 @@ def getInputData(csock, inventory):
             entradas.append(inputInventory[i][j])
         
     return [entradas, inventory, player, dungeon]
-
 
 def gameIsOn(player):
     return player.alive
@@ -180,31 +179,64 @@ def computeFitness(player, inventory, dungeon, nbCelulasCurrent, nbCelulasAnteri
     fitness = 3*vida + fuerza + 2*objetos + experiencia + scoreArma + scoreArmadura + nbCelulasTotal + 100*(nivelMazmorra-1) - 1000*muerto      #alomejor no hay que usar el bool de muerto sino usar una funcion divergente negativa cuando la vida se acerca de 0 (0.2*vidaMax - vidaMax/vida por ejemplo)
     return [fitness, nbCelulasCurrent, nbCelulasAnterior]
 
-def processPrediction(csock, predictions, inventory, player):
+def processPrediction(csock, predictions, inventory, player, dungeon):
     action = np.argmax(predictions)#np.where(np.isclose(predictions, 1.0)) #predictions.index(1.0)
-    print("action: ", action)
-    if action == 0:
-        server_main.sendToGame(csock, "y", "", "")
+    X = player.Xpos
+    Y = player.Ypos
+    print(X, Y)
+    print(dungeon[5])
+    autorizadosDiagos = [b"a", b"b", b"e", b"c"]                                #movimientos posibles para no chocarse contra las paredes
+    autorizadosHorVert = [b"a", b"b", b"e", b"c", b"A", b"&", b"C", b"$"]       #If the agent wants to go against a wall we make it loose a turn
+    actionFailed = False
+    if (action == 0):
+        if (dungeon[Y][X-1] in autorizadosDiagos) and (dungeon[Y-1][X-1] in autorizadosDiagos) and (dungeon[Y-1][X] in autorizadosDiagos):
+            server_main.sendToGame(csock, "y", "", "")
+        else:                               #Action "y" fails if player tries to go over a wall
+            actionFailed = True
     elif action == 1:
-        server_main.sendToGame(csock, "k", "", "")
+        if dungeon[Y-1][X] in autorizadosHorVert:
+            server_main.sendToGame(csock, "k", "", "")
+        else:                               #Action "k" fails if player tries to go over a wall
+            actionFailed = True
     elif action == 2:
-        server_main.sendToGame(csock, "u", "", "")
+        if (dungeon[Y][X+1] in autorizadosDiagos) and (dungeon[Y-1][X+1] in autorizadosDiagos) and (dungeon[Y-1][X] in autorizadosDiagos):
+            server_main.sendToGame(csock, "u", "", "")
+        else:
+            actionFailed = True
     elif action == 3:
-        server_main.sendToGame(csock, "h", "", "")
+        if dungeon[Y][X-1] in autorizadosHorVert:
+            server_main.sendToGame(csock, "h", "", "")
+        else:
+            actionFailed = True
     elif action == 4:
         server_main.sendToGame(csock, ".", "", "")
     elif action == 5:
-        server_main.sendToGame(csock, "l", "", "")
+        if dungeon[Y][X+1] in autorizadosHorVert:
+            server_main.sendToGame(csock, "l", "", "")
+        else:
+            actionFailed = True
     elif action == 6:
-        server_main.sendToGame(csock, "b", "", "")
+        if (dungeon[Y][X-1] in autorizadosDiagos) and (dungeon[Y+1][X-1] in autorizadosDiagos) and (dungeon[Y+1][X] in autorizadosDiagos):
+            server_main.sendToGame(csock, "b", "", "")
+        else:
+            actionFailed = True
     elif action == 7:
-        server_main.sendToGame(csock, "j", "", "")
+        if dungeon[Y+1][X] in autorizadosHorVert:
+            server_main.sendToGame(csock, "j", "", "")
+        else:
+            actionFailed = True
     elif action == 8:
-        server_main.sendToGame(csock, "n", "", "")
-    elif action == 9:
-        server_main.sendToGame(csock, "<", "", "")
-    elif action == 10:
-        server_main.sendToGame(csock, ">", "", "")
+        if (dungeon[Y+1][X] in autorizadosDiagos) and (dungeon[Y+1][X+1] in autorizadosDiagos) and (dungeon[Y][X+1] in autorizadosDiagos):
+            server_main.sendToGame(csock, "n", "", "")
+        else:
+            actionFailed = True
+    elif action == 9:                                               #should mean to go up a level but is disactivated because we don't do this here
+            server_main.sendToGame(csock, "<", "", "")
+    elif action == 10:      
+        if (dungeon[Y][X] == b"e"):
+            server_main.sendToGame(csock, ">", "", "")
+        else:
+            actionFailed = True
     elif action == 11:
         for object in inventory: 
             if object.type == "FOOD":
@@ -286,6 +318,8 @@ def processPrediction(csock, predictions, inventory, player):
             server_main.sendToGame(csock, "w", weaponToEquip.key, "")
         else:
             server_main.sendToGame(csock, ".", "", "")                    #in case of no ther weapon, resting
+    if actionFailed:
+        server_main.sendToGame(csock, ".", "", "")
     return player
 
                 

@@ -59,7 +59,7 @@ data_outputs = numpy.array([[1, 0],
                             [1, 0]])"""
 
 # Prepare the PyGAD parameters. Check the documentation for more information: https://pygad.readthedocs.io/en/latest/README_pygad_ReadTheDocs.html#pygad-ga-class
-num_generations = 100 # Number of generations.
+num_generations = 10 # Number of generations.
 num_parents_mating = 10 # Number of solutions to be selected as parents in the mating pool.
 initial_population = keras_ga.population_weights # Initial population of network weights.
 

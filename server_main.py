@@ -66,7 +66,7 @@ def processDataFromGame(csock, inventory):      #ssock estaba en parametro antes
         for col in payload_in.map:
             indCol = 0
             for val in col:
-                #print ("{:c}".format(val+33), end = '')
+                print ("{:c}".format(val+33), end = '')
                 if ("{:c}".format(val+33)) not in ["£", "¡"]:
                     dungeon[indLin, indCol] = "{:c}".format(val+33)
                 elif ("{:c}".format(val+33)) == "£":
@@ -74,7 +74,7 @@ def processDataFromGame(csock, inventory):      #ssock estaba en parametro antes
                 else:                                           #should be "¡" but this resolves the general case
                     dungeon[indLin, indCol] = "&"
                 indCol += 1
-            #print(" ")
+            print(" ")
             indLin +=1
         
         player.health = payload_in.current_health                   #armor, weapon1 and weapon2 are asignated when the player decides to equip/unequip items
@@ -140,7 +140,7 @@ def processDataFromGame(csock, inventory):      #ssock estaba en parametro antes
             print("Sending blank space \n")
             key_input = key_input.encode('ascii')
             nsent = csock.send(key_input)
-            buff = csock.recv(512)
+            #buff = csock.recv(512)
             #endOfIndentation
     print("returning data")
     return [dungeon, player, inventory]
@@ -154,17 +154,19 @@ def sendToGame(csock, act1, act2, act3):
     #time.sleep(0.1)
     print("trying to send data to game")
     key_input1 = act1.encode('ascii')
-    print("key encoded")
+    print("sending ", act1)
     nsent = csock.send(key_input1)
     #buff = csock.recv(512)
     if act2 !="":
-        time.sleep(0.2)
+        time.sleep(0.1)
         key_input2 = act2.encode('ascii')
+        print("sending ", act2)
         nsent = csock.send(key_input2)
         #buff = csock.recv(512)
         if act3 !="":
-            time.sleep(0.2)
+            time.sleep(0.1)
             key_input3 = act3.encode('ascii')
+            print("sending ", act3)
             nsent = csock.send(key_input3)
             #buff = csock.recv(512)
     print("data sent to game")
@@ -277,7 +279,7 @@ def main():
                     print("Sending blank space \n")
                 key_input = key_input.encode('ascii')
                 nsent = csock.send(key_input)
-                buff = csock.recv(512)
+                #buff = csock.recv(512)
 
             print("Closing connection to client")
             print("----------------------------")
@@ -294,7 +296,7 @@ def main():
         ssock.close()
 
 
-def main_backupu():
+'''def main_backupu():
     inventory = {}
     letters = ['f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x'] 
     PORT = 2300
@@ -375,7 +377,7 @@ def main_backupu():
         ssock.close()
     finally:
         print("Closing socket")
-        ssock.close()
+        ssock.close()'''
 
 
 if __name__ == "__main__":
