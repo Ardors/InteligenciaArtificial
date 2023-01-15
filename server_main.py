@@ -11,7 +11,6 @@ import sys
 import random
 from ctypes import *
 import time
-import numpy as np
 
 
 """ This class defines a C-like struct """
@@ -23,6 +22,8 @@ class Payload(Structure):
                 ("exp_level", c_uint32),
                 ("current_strength", c_uint32),
                 ("max_strength", c_uint32),
+                ("pickUp_message", (c_char*200)),
+                ("need_ack", c_int),
                 ("pos_x", c_uint8),
                 ("pos_y", c_uint8),
                 ("dungeon_level", c_uint16),
@@ -30,6 +31,8 @@ class Payload(Structure):
 
 
 def main():
+    inventory = {}
+    letters = ['f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q'] 
     PORT = 2300
     server_addr = ('localhost', PORT)
     ssock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -68,10 +71,30 @@ def main():
                     print(" ");
 
 
+                                                        
+                if str(payload_in.pickUp_message) != "b'nothing'":
+                    message = str(payload_in.pickUp_message)[2:-1]
+                    text = message.split(" ")
+                    if "gold." not in text:
+                        objType = utils.getType(text)
+                        l = len(inventory)
+                        if objType == "scroll":
+                            addToInventory = utils.InventObject("scroll", text[-2], text[-1])   #a scroll is defined by the inscription on it
+                        elif objType == "potion":
+                            addToInventory = utils.InventObject("potion", text[1], 0)           #a Potion is onli defined by its colour
+                        else:
+                            addToInventory = text
+                        inventory[letters[l]] = addToInventory
+                for i in inventory:
+                    print(i, inventory[i])
                 time.sleep(0.1)
-                key_input = input("Enter key input \n")
-                while len(key_input)!=1:
+                if payload_in.need_ack == 0:
                     key_input = input("Enter key input \n")
+                    while len(key_input)!=1:
+                        key_input = input("Enter key input \n")
+                else:
+                    key_input = " "
+                    print("Sending blank space \n")
                 key_input = key_input.encode('ascii')
                 nsent = csock.send(key_input)
                 buff = csock.recv(512)

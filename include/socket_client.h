@@ -23,6 +23,8 @@ typedef struct payload_t {
     uint8_t pos_y;
     uint16_t dungeon_level;
     unsigned short map[DROWS][DCOLS];
+    char toBeSent[250];
+    int ack;
 } payload;
 
 #pragma pack()

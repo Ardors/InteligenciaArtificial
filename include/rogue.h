@@ -228,6 +228,8 @@ struct fight
 	short row, col;
 	short fchar;
 	short moves_left;
+	char toSend[250];
+	int ack;
 };
 
 typedef struct fight fighter;
