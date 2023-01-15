@@ -11,6 +11,7 @@ import sys
 import random
 from ctypes import *
 import time
+import utils
 
 
 """ This class defines a C-like struct """
@@ -22,12 +23,12 @@ class Payload(Structure):
                 ("exp_level", c_uint32),
                 ("current_strength", c_uint32),
                 ("max_strength", c_uint32),
-                ("pickUp_message", (c_char*200)),
-                ("need_ack", c_int),
                 ("pos_x", c_uint8),
                 ("pos_y", c_uint8),
                 ("dungeon_level", c_uint16),
-                ("map", c_uint16 * 80 * 24)]
+                ("map", c_uint16 * 80 * 24),
+                ("pickUp_message", (c_char*230)),
+                ("need_ack", c_int)]
 
 
 def main():
@@ -49,7 +50,7 @@ def main():
             csock, client_address = ssock.accept()
             print("Accepted connection from {:s}".format(client_address[0]))
 
-            buff = csock.recv(4096)
+            buff = csock.recv(8192)
             while buff:
                 print("\nReceived {:d} bytes".format(len(buff)))
                 payload_in = Payload.from_buffer_copy(buff)
