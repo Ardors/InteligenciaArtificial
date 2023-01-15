@@ -28,6 +28,14 @@ extern short party_room;
 extern object level_objects;
 extern object level_monsters;
 
+const int PORT = 2300;
+const char* SERVERNAME = "localhost";
+#define BUFFSIZE sizeof(payload)
+char buff[BUFFSIZE];
+int sock;
+int nread;
+time_t t;
+
 int saved_uid;
 int true_uid;
 
@@ -71,6 +79,24 @@ int main(int argc, char *argv[])
 		put_player(party_room);
 		print_stats(STAT_ALL);
 PL:		
+		srand((unsigned) time(&t));
+		
+		struct sockaddr_in server_address;
+		memset(&server_address, 0, sizeof(server_address));
+		server_address.sin_family = AF_INET;
+		inet_pton(AF_INET, SERVERNAME, &server_address.sin_addr);
+		server_address.sin_port = htons(PORT);
+
+		if ((sock = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
+			printf("ERROR: Socket creation failed\n");
+			return 1;
+		}
+
+		if (connect(sock, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
+			printf("ERROR: Unable to connect to server\n");
+			return 1;
+		}
+		
 		play_level();
 		free_stuff(&level_objects);
 		free_stuff(&level_monsters);

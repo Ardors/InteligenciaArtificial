@@ -6,10 +6,12 @@ import os
 import socket
 import utils
 import server_main
+import struct
 
 
 def init_game():
     """Initialize player inventory, equipment and other things"""
+    print("####################STARTING NEW INDIVUDUAL########################")
     player = utils.Player()     #starting position = (5,5) but this will be changed in the first getInputData
     inventory = []
     inventory.append(utils.Object("FOOD", "food", 1, "a"))
@@ -69,7 +71,7 @@ def launch_game():
 def getInputData(csock, inventory):
     """outputs: viewedDungeon as a matrix of binary column vectors 
     representing: [floor(.) wall(- or |) tunnel(#) door(+) ennemy(any letter) collectible(any symbol) stairs(%)]"""
-    [csock, dungeon, player, inventory] = server_main.processDataFromGame(csock, inventory)
+    [dungeon, player, inventory] = server_main.processDataFromGame(csock, inventory)
     print("data processed! \n")
     viewedDungeon = np.zeros((24,80,7))
     for i in range(24):

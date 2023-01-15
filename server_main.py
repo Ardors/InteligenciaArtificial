@@ -42,126 +42,134 @@ def processDataFromGame(csock, inventory):      #ssock estaba en parametro antes
     letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x'] 
     #csock, client_address = ssock.accept()
     #print("Accepted connection from {:s}".format(client_address[0]))
-
-    buff = csock.recv(8192)
+    print("retreiving data")
+    #time.sleep(0.3)
+    buff = csock.recv(4130)#8192)
     print("received buff")
-    #while buff:
-    #print("\nReceived {:d} bytes".format(len(buff)))
-    payload_in = Payload.from_buffer_copy(buff)
-    print("buffer copied!")
-    """print("Data read: gold={:d}, current health={:d}, max health={:d}, current exp={:d}, current level={:d}, current strength={:d}, max strength={:d}, pos_x={:d}, pos_y={:d}, dungeon_level={:d}".format(
-    payload_in.gold,
-    payload_in.current_health,
-    payload_in.max_health,
-    payload_in.current_exp,
-    payload_in.exp_level,
-    payload_in.current_strength,
-    payload_in.max_strength,
-    payload_in.pos_x,
-    payload_in.pos_y,
-    payload_in.dungeon_level))"""
-    
-    indCol, indLin = 0, 0
-    for col in payload_in.map:
-        indCol = 0
-        for val in col:
-            #print ("{:c}".format(val+33), end = '')
-            if ("{:c}".format(val+33)) not in ["£", "¡"]:
-                dungeon[indLin, indCol] = "{:c}".format(val+33)
-            elif ("{:c}".format(val+33)) == "£":
-                dungeon[indLin, indCol] = "$"
-            else:                                           #should be "¡" but this resolves the general case
-                dungeon[indLin, indCol] = "&"
-            indCol += 1
-        #print(" ")
-        indLin +=1
-    
-    player.health = payload_in.current_health                   #armor, weapon1 and weapon2 are asignated when the player decides to equip/unequip items
-    player.maxHealth = payload_in.max_health
-    player.strength = payload_in.max_strength
-    player.maxStrength = payload_in.max_strength
-    player.level = payload_in.dungeon_level
-    player.Xpos = payload_in.pos_x
-    player.Ypos = payload_in.pos_y
-    player.alive = payload_in.alive
+    if buff:
+        print("\nReceived {:d} bytes".format(len(buff)))
+        payload_in = Payload.from_buffer_copy(buff)
+        print("buffer copied!")
+        """print("Data read: gold={:d}, current health={:d}, max health={:d}, current exp={:d}, current level={:d}, current strength={:d}, max strength={:d}, pos_x={:d}, pos_y={:d}, dungeon_level={:d}".format(
+        payload_in.gold,
+        payload_in.current_health,
+        payload_in.max_health,
+        payload_in.current_exp,
+        payload_in.exp_level,
+        payload_in.current_strength,
+        payload_in.max_strength,
+        payload_in.pos_x,
+        payload_in.pos_y,
+        payload_in.dungeon_level))"""
+        
+        indCol, indLin = 0, 0
+        for col in payload_in.map:
+            indCol = 0
+            for val in col:
+                #print ("{:c}".format(val+33), end = '')
+                if ("{:c}".format(val+33)) not in ["£", "¡"]:
+                    dungeon[indLin, indCol] = "{:c}".format(val+33)
+                elif ("{:c}".format(val+33)) == "£":
+                    dungeon[indLin, indCol] = "$"
+                else:                                           #should be "¡" but this resolves the general case
+                    dungeon[indLin, indCol] = "&"
+                indCol += 1
+            #print(" ")
+            indLin +=1
+        
+        player.health = payload_in.current_health                   #armor, weapon1 and weapon2 are asignated when the player decides to equip/unequip items
+        player.maxHealth = payload_in.max_health
+        player.strength = payload_in.max_strength
+        player.maxStrength = payload_in.max_strength
+        player.level = payload_in.dungeon_level
+        player.Xpos = payload_in.pos_x
+        player.Ypos = payload_in.pos_y
+        player.alive = payload_in.alive
 
-                                            
-    if str(payload_in.pickUp_message) != "b'nothing'":
-        message = str(payload_in.pickUp_message)[2:-1]
-        text = message.split(" ")
-        if "gold." not in text:
-            objType = utils.getType(text)
-            dontClassify = False
-            ObjToClassify = utils.Object("PLACEHOLDER", "PLACESUBTYPE")
-            print(text)
-            if objType == "scroll":
-                ObjToClassify = utils.Object("SCROLL", text[-2], 1)   #a scroll is defined by the inscription on it
-            elif objType == "potion":
-                ObjToClassify = utils.Object("POTION", text[1], 1)           #a Potion is only defined by its colour
-            elif (objType == "armor") or  (objType == "mail"):
-                ObjToClassify = utils.Object("ARMOR", text[0], 1)
-            elif objType in ["bow", "darts", "arrows", "daggers", "shurikens", "mace", "long", "two-handed"]:
-                ObjToClassify = utils.Object("WEAPON", objType, 1)
-            elif (objType == "food") or (objType == "slime-mold"):
-                if text[0] == "Some" or (objType == "slime-mold"):
-                    ObjToClassify = utils.Object("FOOD", objType, 1)
-                else:
-                    ObjToClassify = utils.Object("FOOD", objType, text[0])
-            elif (objType == "wand") or (objType == "staff"):
-                ObjToClassify = utils.Object("WAND", text[1], 1)
-            elif (objType == "unknown"):
-                dontClassify = True
-            if not(dontClassify):
-                classified = False
-                print("type: ", ObjToClassify.type, " subtype: ", ObjToClassify.subtype)
-                for obj in inventory:
-                    if (obj.type == ObjToClassify.type) and (obj.subtype == ObjToClassify.subtype):             #check if this item already exists in inventory
-                        obj.quantity += ObjToClassify.quantity
-                        classified = True
-                        break
-                if not(classified):                                                                                 #try to assign the object to the first available key
-                    assignedKeys = []
+                                                
+        if str(payload_in.pickUp_message) != "b'nothing'":
+            message = str(payload_in.pickUp_message)[2:-1]
+            text = message.split(" ")
+            if "gold." not in text:
+                objType = utils.getType(text)
+                dontClassify = False
+                ObjToClassify = utils.Object("PLACEHOLDER", "PLACESUBTYPE")
+                print(text)
+                if objType == "scroll":
+                    ObjToClassify = utils.Object("SCROLL", text[-2], 1)   #a scroll is defined by the inscription on it
+                elif objType == "potion":
+                    ObjToClassify = utils.Object("POTION", text[1], 1)           #a Potion is only defined by its colour
+                elif (objType == "armor") or  (objType == "mail"):
+                    ObjToClassify = utils.Object("ARMOR", text[0], 1)
+                elif objType in ["bow", "darts", "arrows", "daggers", "shurikens", "mace", "long", "two-handed"]:
+                    ObjToClassify = utils.Object("WEAPON", objType, 1)
+                elif (objType == "food") or (objType == "slime-mold"):
+                    if text[0] == "Some" or (objType == "slime-mold"):
+                        ObjToClassify = utils.Object("FOOD", objType, 1)
+                    else:
+                        ObjToClassify = utils.Object("FOOD", objType, text[0])
+                elif (objType == "wand") or (objType == "staff"):
+                    ObjToClassify = utils.Object("WAND", text[1], 1)
+                elif (objType == "unknown"):
+                    dontClassify = True
+                if not(dontClassify):
+                    classified = False
+                    print("type: ", ObjToClassify.type, " subtype: ", ObjToClassify.subtype)
                     for obj in inventory:
-                        assignedKeys.append(obj.key)
-                    for letter in letters:
-                        if letter not in assignedKeys:
-                            ObjToClassify.key = letter
-                            inventory.append(ObjToClassify)
+                        if (obj.type == ObjToClassify.type) and (obj.subtype == ObjToClassify.subtype):             #check if this item already exists in inventory
+                            obj.quantity += ObjToClassify.quantity
                             classified = True
                             break
-                if not(classified):                                                                                 #if the object is still not classified, it means that the inventory is full. 
-                    pass                                                                                            #we should never get there because a full inventory displays a message that does not contains key-subtypes words
-    for i in inventory:
-        print(i.type, i.subtype, i.quantity, i.key, "\n")
-    time.sleep(0.1)
-    if payload_in.need_ack == 1:
-        key_input = " "
-        print("Sending blank space \n")
-        key_input = key_input.encode('ascii')
-        nsent = csock.send(key_input)
-        buff = csock.recv(512)
-            #endOdIndentation
+                    if not(classified):                                                                                 #try to assign the object to the first available key
+                        assignedKeys = []
+                        for obj in inventory:
+                            assignedKeys.append(obj.key)
+                        for letter in letters:
+                            if letter not in assignedKeys:
+                                ObjToClassify.key = letter
+                                inventory.append(ObjToClassify)
+                                classified = True
+                                break
+                    if not(classified):                                                                                 #if the object is still not classified, it means that the inventory is full. 
+                        pass                                                                                            #we should never get there because a full inventory displays a message that does not contains key-subtypes words
+        for i in inventory:
+            print(i.type, i.subtype, i.quantity, i.key, "\n")
+        #time.sleep(0.1)
+        if payload_in.need_ack == 1:
+            key_input = " "
+            print("Sending blank space \n")
+            key_input = key_input.encode('ascii')
+            nsent = csock.send(key_input)
+            buff = csock.recv(512)
+            #endOfIndentation
     print("returning data")
-    return [csock, dungeon, player, inventory]
+    return [dungeon, player, inventory]
 
     """print("Closing connection to client")           #put this in the sendActionToGame function
     print("----------------------------")
     csock.close()"""
 
 def sendToGame(csock, act1, act2, act3):
+    #csock, client_address = ssock.accept()
+    #time.sleep(0.1)
     print("trying to send data to game")
     key_input1 = act1.encode('ascii')
+    print("key encoded")
     nsent = csock.send(key_input1)
-    buff = csock.recv(512)
+    #buff = csock.recv(512)
     if act2 !="":
+        time.sleep(0.2)
         key_input2 = act2.encode('ascii')
         nsent = csock.send(key_input2)
-        buff = csock.recv(512)
+        #buff = csock.recv(512)
         if act3 !="":
+            time.sleep(0.2)
             key_input3 = act3.encode('ascii')
             nsent = csock.send(key_input3)
-            buff = csock.recv(512)
-    csock.close()
+            #buff = csock.recv(512)
+    print("data sent to game")
+    #time.sleep(0.1)
+    #csock.close()
 
 def main():
     inventory = []

@@ -228,9 +228,9 @@ struct fight
 	short row, col;
 	short fchar;
 	short moves_left;
-	char toSend[250];
 	int ack;
 	short alive;
+	char toSend[250];
 };
 
 typedef struct fight fighter;

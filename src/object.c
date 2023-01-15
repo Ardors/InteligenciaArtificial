@@ -44,9 +44,9 @@ fighter rogue = {
 	0, 0,		/* row, col */
 	'@',		/* char */
 	1250,		/* moves */
-	"nothing",	/* toSend */
 	0,			/* ack */
-	1			/* alive */
+	1,			/* alive */
+	"nothing"	/* toSend */
 };
 
 struct id id_potions[POTIONS] = {

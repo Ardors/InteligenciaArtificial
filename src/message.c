@@ -34,6 +34,10 @@ extern short add_strength;
 extern int cur_level;
 extern unsigned short dungeon[DROWS][DCOLS];
 extern fighter rogue;
+extern int sock;
+#define BUFFSIZE sizeof(payload)
+extern char buff[BUFFSIZE];
+extern int nread;
 
 void save_screen(void);
 void pad(char *, short);
@@ -171,14 +175,12 @@ int rgetchar(void)
 
 	for(;;)
 	{
-		const int PORT = 2300;
+		/*const int PORT = 2300;
 		const char* SERVERNAME = "localhost";
 		int BUFFSIZE = sizeof(payload);
 		char buff[BUFFSIZE];
 		int sock;
 		int nread;
-		float mintemp = -10.0;
-		float maxtemp = 30.0;
 		time_t t;
 
 		srand((unsigned) time(&t));
@@ -197,11 +199,12 @@ int rgetchar(void)
 		if (connect(sock, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
 			printf("ERROR: Unable to connect to server\n");
 			return 1;
-		}
+		}*/
 
 		//printf("Connected to %s\n", SERVERNAME);
 
 		payload data;
+		payload data2;
 		data.gold = rogue.gold;
         data.current_health = rogue.hp_current;
         data.max_health = rogue.hp_max;
@@ -230,8 +233,8 @@ int rgetchar(void)
         //printf("Received %d bytes\n", nread);
         ch = (int)(buff[0]);
 		
-		close(sock);
-		sleep(0.1);
+		//close(sock);
+		//sleep(0.1);
 
 		switch(ch)
 		{
