@@ -40,27 +40,10 @@ def processDataFromGame(csock, inventory):      #ssock estaba en parametro antes
     dungeon[:] = ""
     player = utils.Player()
     letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x'] 
-    #csock, client_address = ssock.accept()
-    #print("Accepted connection from {:s}".format(client_address[0]))
-    print("retreiving data")
-    #time.sleep(0.3)
     buff = csock.recv(4130)#8192)
-    print("received buff")
     if buff:
         print("\nReceived {:d} bytes".format(len(buff)))
         payload_in = Payload.from_buffer_copy(buff)
-        print("buffer copied!")
-        """print("Data read: gold={:d}, current health={:d}, max health={:d}, current exp={:d}, current level={:d}, current strength={:d}, max strength={:d}, pos_x={:d}, pos_y={:d}, dungeon_level={:d}".format(
-        payload_in.gold,
-        payload_in.current_health,
-        payload_in.max_health,
-        payload_in.current_exp,
-        payload_in.exp_level,
-        payload_in.current_strength,
-        payload_in.max_strength,
-        payload_in.pos_x,
-        payload_in.pos_y,
-        payload_in.dungeon_level))"""
         
         indCol, indLin = 0, 0
         for col in payload_in.map:
@@ -142,17 +125,9 @@ def processDataFromGame(csock, inventory):      #ssock estaba en parametro antes
             nsent = csock.send(key_input)
             #buff = csock.recv(512)
             #endOfIndentation
-    print("returning data")
     return [dungeon, player, inventory]
 
-    """print("Closing connection to client")           #put this in the sendActionToGame function
-    print("----------------------------")
-    csock.close()"""
-
 def sendToGame(csock, act1, act2, act3):
-    #csock, client_address = ssock.accept()
-    #time.sleep(0.1)
-    print("trying to send data to game")
     key_input1 = act1.encode('ascii')
     print("sending ", act1)
     nsent = csock.send(key_input1)
@@ -169,13 +144,9 @@ def sendToGame(csock, act1, act2, act3):
             print("sending ", act3)
             nsent = csock.send(key_input3)
             #buff = csock.recv(512)
-    print("data sent to game")
-    #time.sleep(0.1)
-    #csock.close()
 
 def main():
     inventory = []
-    print("_____________________________________________________________##########################aaaaaaaaaaaaaaaaaaaaooooooooooooooo")
     inventory.append(utils.Object("FOOD", "food", 1, "a"))
     inventory.append(utils.Object("ARMOR", "ring", 1, "b"))
     inventory.append(utils.Object("WEAPON", "mace", 1, "c"))
@@ -219,8 +190,6 @@ def main():
                     for val in col:
                         print ("{:c}".format(val+33), end = '')
                     print(" ")
-
-
                                                         
                 if str(payload_in.pickUp_message) != "b'nothing'":
                     message = str(payload_in.pickUp_message)[2:-1]
@@ -294,90 +263,6 @@ def main():
     finally:
         print("Closing socket")
         ssock.close()
-
-
-'''def main_backupu():
-    inventory = {}
-    letters = ['f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x'] 
-    PORT = 2300
-    server_addr = ('localhost', PORT)
-    ssock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    print("Socket created")
-
-    try:
-        # bind the server socket and listen
-        ssock.bind(server_addr)
-        print("Bind done")
-        ssock.listen(3)
-        print("Server listening on port {:d}".format(PORT))
-
-        while True:
-            csock, client_address = ssock.accept()
-            print("Accepted connection from {:s}".format(client_address[0]))
-
-            buff = csock.recv(8192)
-            while buff:
-                print("\nReceived {:d} bytes".format(len(buff)))
-                payload_in = Payload.from_buffer_copy(buff)
-                print("Data read: gold={:d}, current health={:d}, max health={:d}, current exp={:d}, current level={:d}, current strength={:d}, max strength={:d}, pos_x={:d}, pos_y={:d}, dungeon_level={:d}".format(
-                payload_in.gold,
-                payload_in.current_health,
-                payload_in.max_health,
-                payload_in.current_exp,
-                payload_in.exp_level,
-                payload_in.current_strength,
-                payload_in.max_strength,
-                payload_in.pos_x,
-                payload_in.pos_y,
-                payload_in.dungeon_level))
-
-                for col in payload_in.map:
-                    for val in col:
-                        print ("{:c}".format(val+33), end = '')
-                    print(" ");
-
-
-                                                        
-                if str(payload_in.pickUp_message) != "b'nothing'":
-                    message = str(payload_in.pickUp_message)[2:-1]
-                    text = message.split(" ")
-                    if "gold." not in text:
-                        objType = utils.getType(text)
-                        l = len(inventory)
-                        if objType == "scroll":
-                            addToInventory = utils.InventObject("scroll", text[-2], text[-1])   #a scroll is defined by the inscription on it
-                        elif objType == "potion":
-                            addToInventory = utils.InventObject("potion", text[1], 0)           #a Potion is only defined by its colour
-                        else:
-                            addToInventory = text
-                        inventory[letters[l]] = addToInventory
-                for i in inventory:
-                    print(i, inventory[i])
-                time.sleep(0.1)
-                if payload_in.need_ack == 0:
-                    key_input = input("Enter key input \n")
-                    while len(key_input)!=1:
-                        key_input = input("Enter key input \n")
-                else:
-                    key_input = " "
-                    print("Sending blank space \n")
-                key_input = key_input.encode('ascii')
-                nsent = csock.send(key_input)
-                buff = csock.recv(512)
-
-            print("Closing connection to client")
-            print("----------------------------")
-            csock.close()
-
-    except AttributeError as ae:
-        print("Error creating the socket: {}".format(ae))
-    except socket.error as se:
-        print("Exception on socket: {}".format(se))
-    except KeyboardInterrupt:
-        ssock.close()
-    finally:
-        print("Closing socket")
-        ssock.close()'''
 
 
 if __name__ == "__main__":

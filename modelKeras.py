@@ -24,7 +24,5 @@ def createModel():
     model.add(dense_layer3)
     model.add(output_layer)
     print(model.summary)
-    """converter = tf.lite.TFLiteConverter.from_keras_model(model)     #light the Keras model
-    tflite_model_full = converter.convert()"""
 
     return [model, numNodes]

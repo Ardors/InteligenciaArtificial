@@ -6,12 +6,11 @@ import os
 import socket
 import utils
 import server_main
-import struct
 
 
 def init_game():
     """Initialize player inventory, equipment and other things"""
-    print("####################STARTING NEW INDIVUDUAL########################")
+    print("####################STARTING NEW INDIVUDUAL####################")
     player = utils.Player()     #starting position = (5,5) but this will be changed in the first getInputData
     inventory = []
     inventory.append(utils.Object("FOOD", "food", 1, "a"))
@@ -23,12 +22,11 @@ def init_game():
     exploredDungeon = np.zeros((24,80))
     return(player, {}, initialFitness, exploredDungeon)
 
-def play_game(model, solution):#, sol_idx):
+def play_game(model, solution):
     [player, inventory, solution_fitness, exploredDungeon] = init_game()
     PORT = 2300
     server_addr = ('localhost', PORT)
     ssock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    #print("Socket created")
     try:
         # bind the server socket and listen
         ssock.bind(server_addr)
@@ -52,9 +50,7 @@ def play_game(model, solution):#, sol_idx):
             print(len(predictions), len(predictions[0]))
             player = processPrediction(csock, predictions[0], inventory, player, dungeon)                   #player armor, weapon1 and weapon2 attributes can be modified in processPrediction
             [Inputs, inventory, player, dungeon, exploredDungeon] = getInputData(csock, inventory, exploredDungeon)
-            print("finished getting data")
             [solution_fitness, nbCelulasCurrent, nbCelulasAnterior] = computeFitness(player, inventory, dungeon, nbCelulasCurrent, nbCelulasAnterior)
-            print("fitness compluted")
     except AttributeError as ae:
         print("Error creating the socket: {}".format(ae))
     except socket.error as se:
@@ -75,7 +71,6 @@ def getInputData(csock, inventory, exploredDungeon):
     """outputs: viewedDungeon as a matrix of binary column vectors 
     representing: [floor(.) wall(- or |) tunnel(#) door(+) ennemy(any letter) collectible(any symbol) stairs(%)]"""
     [dungeon, player, inventory] = server_main.processDataFromGame(csock, inventory)
-    print("data processed! \n")
     viewedDungeon = np.zeros((24,80,7))
     for i in range(24):
         for j in range(80):
@@ -169,22 +164,13 @@ def computeFitness(player, inventory, dungeon, nbCelulasCurrent, nbCelulasAnteri
     scoreArma = player.weapon1
     scoreArmadura = player.armor
     objetos = len(inventory) - 5        #player starts with 5 objects in inventory
-    """counter = 0                         #contador de celdillas descubiertas
-    for i in range(24):
-        for j in range(80):
-            if dungeon[i][j] != " ":
-                counter+=1
-    if nbCelulasCurrent > counter:                                      #Queremos utilizar el numero TOTAL de celulas descubiertas, no solo las del nivel actual
-        nbCelulasAnterior = nbCelulasAnterior + nbCelulasCurrent
-    nbCelulasCurrent = counter
-    nbCelulasTotal = nbCelulasAnterior + nbCelulasCurrent"""
     scoreExploracion = player.celulasExploradas
     muerto = not(player.alive)
     fitness = 3*vida + fuerza + 2*objetos + experiencia + scoreArma + scoreArmadura + 100*(nivelMazmorra-1) + 2*scoreExploracion      #alomejor no hay que usar el bool de muerto sino usar una funcion divergente negativa cuando la vida se acerca de 0 (0.2*vidaMax - vidaMax/vida por ejemplo)
     return [fitness, nbCelulasCurrent, nbCelulasAnterior]
 
 def processPrediction(csock, predictions, inventory, player, dungeon):
-    action = np.argmax(predictions)#np.where(np.isclose(predictions, 1.0)) #predictions.index(1.0)
+    action = np.argmax(predictions)
     X = player.Xpos
     Y = player.Ypos
     autorizadosDiagos = [b"a", b"b", b"e", b"c"]                                #movimientos posibles para no chocarse contra las paredes
@@ -292,7 +278,7 @@ def processPrediction(csock, predictions, inventory, player, dungeon):
             server_main.sendToGame(csock, ".", "", "")          #if the agent tries to do a prohibited move il passes its turn
         else:
             player.armor = 0
-            server_main.sendToGame(csock, "T", "", "")                         #remove armor
+            server_main.sendToGame(csock, ".", "", "")                         #remove armor
     elif action == 23:
         Subtypes = ["placeholder1", "placeholder2", "leather", "ring", "scale", "chain", "banded", "splint", "plate"]
         armorPower = 0                              #I put placeholder1 and placeholder2 so that leather armor has 2 armorPower
