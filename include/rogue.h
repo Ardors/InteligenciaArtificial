@@ -275,7 +275,7 @@ enum room_type
 
 #define MAX_TRAPS 10	/* maximum traps per level */
 
-#define HIDE_PERCENT 12
+#define HIDE_PERCENT 0  //MODIFIED FOR SIMPLICITY
 
 #define MONSTERS 26
 

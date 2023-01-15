@@ -148,7 +148,7 @@ void make_level(void)
 	}
 	if (!big_room)
    	{
-		add_mazes();
+		//add_mazes();
 
 		mix_random_rooms();
 
