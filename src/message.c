@@ -32,6 +32,7 @@ char hunger_str[8] = "";
 extern boolean cant_int, did_int, interrupted, save_is_interactive;
 extern short add_strength;
 extern int cur_level;
+extern unsigned short dungeon[DROWS][DCOLS];
 extern fighter rogue;
 
 void save_screen(void);
@@ -168,7 +169,7 @@ int rgetchar(void)
 	{
 		const int PORT = 2300;
 		const char* SERVERNAME = "localhost";
-		int BUFFSIZE = 1;//sizeof(payload);
+		int BUFFSIZE = sizeof(payload);
 		char buff[BUFFSIZE];
 		int sock;
 		int nread;
@@ -204,6 +205,15 @@ int rgetchar(void)
 		data.max_exp = rogue.exp;
 		data.current_strength = rogue.str_current;
 		data.max_strength = rogue.str_max;
+		data.pos_x = rogue.col;
+		data.pos_y = rogue.row;
+		data.dungeon_level = cur_level;
+		for (int i = 0; i < DROWS; i++){
+			for (int j = 0; j < DCOLS; j++){
+				data.map[i][j] = dungeon[i][j];
+			}
+		}
+		
 		sendMsg(sock, &data, sizeof(payload));
 
 		// ch = getchar();

@@ -11,6 +11,7 @@ import sys
 import random
 from ctypes import *
 import time
+import numpy as np
 
 
 """ This class defines a C-like struct """
@@ -21,7 +22,11 @@ class Payload(Structure):
                 ("current_exp", c_uint32),
                 ("exp_level", c_uint32),
                 ("current_strength", c_uint32),
-                ("max_strength", c_uint32)]
+                ("max_strength", c_uint32),
+                ("pos_x", c_uint8),
+                ("pos_y", c_uint8),
+                ("dungeon_level", c_uint16),
+                ("map", c_uint16 * 80 * 24)]
 
 
 def main():
@@ -41,17 +46,28 @@ def main():
             csock, client_address = ssock.accept()
             print("Accepted connection from {:s}".format(client_address[0]))
 
-            buff = csock.recv(512)
+            buff = csock.recv(4096)
             while buff:
                 print("\nReceived {:d} bytes".format(len(buff)))
                 payload_in = Payload.from_buffer_copy(buff)
-                print("Data read: gold={:d}, current health={:d}, max health={:d}, current exp={:d}, current level={:d}, current strength={:d}, max strength={:d}".format(payload_in.gold,
-                                                            payload_in.current_health,
-                                                            payload_in.max_health,
-                                                            payload_in.current_exp,
-                                                            payload_in.exp_level,
-                                                            payload_in.current_strength,
-                                                            payload_in.max_strength))
+                print("Data read: gold={:d}, current health={:d}, max health={:d}, current exp={:d}, current level={:d}, current strength={:d}, max strength={:d}, pos_x={:d}, pos_y={:d}, dungeon_level={:d}".format(
+                payload_in.gold,
+                payload_in.current_health,
+                payload_in.max_health,
+                payload_in.current_exp,
+                payload_in.exp_level,
+                payload_in.current_strength,
+                payload_in.max_strength,
+                payload_in.pos_x,
+                payload_in.pos_y,
+                payload_in.dungeon_level))
+
+                for col in payload_in.map:
+                    for val in col:
+                        print ("{:c}".format(val+33), end = '')
+                    print(" ");
+
+
                 time.sleep(0.1)
                 key_input = input("Enter key input \n")
                 while len(key_input)!=1:

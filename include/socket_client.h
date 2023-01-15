@@ -19,6 +19,10 @@ typedef struct payload_t {
     uint32_t max_exp;
     uint32_t current_strength;
     uint32_t max_strength;
+    uint8_t pos_x;
+    uint8_t pos_y;
+    uint16_t dungeon_level;
+    unsigned short map[DROWS][DCOLS];
 } payload;
 
 #pragma pack()
