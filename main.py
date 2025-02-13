@@ -21,11 +21,11 @@ def callback_generation(ga_instance):
 
 # Create an instance of the pygad.kerasga.KerasGA class to build the initial population.
 keras_ga = pygad.kerasga.KerasGA(model=model,
-                                 num_solutions=10)
+                                 num_solutions=50)
 
 # Prepare the PyGAD parameters. Check the documentation for more information: https://pygad.readthedocs.io/en/latest/README_pygad_ReadTheDocs.html#pygad-ga-class
-num_generations = 6 # Number of generations.
-num_parents_mating = 3 # Number of solutions to be selected as parents in the mating pool.
+num_generations = 20 # Number of generations.
+num_parents_mating = 10 # Number of solutions to be selected as parents in the mating pool.
 initial_population = keras_ga.population_weights # Initial population of network weights.
 
 # Create an instance of the pygad.GA class
